@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "ga-pyphetools"
+version = "0.1.0"
+description = ""
+authors = ["Justin Reese <justaddcoffee@gmail.com>"]
+readme = "README.md"
+packages = [{include = "ga_pyphetools"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pandas = "^2"
+semsimian = "^0.2.8"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
