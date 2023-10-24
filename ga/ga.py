@@ -1,47 +1,76 @@
-import pandas as pd
+import random
 
-def run_phenomizer(
-    holdout_number = 3,
-    hpo_graph_subject_col = 'subject',
-    hpo_graph_object_col = 'object',
-    hpo_df_pt_or_disease_id_col = 'person_id',
+import pandas as pd
+from collections import defaultdict
+import os
+import json
+
+
+def parse_phenopackets(directory_path):
+    json_files = []
+    for foldername, subfolders, filenames in os.walk(directory_path):
+        for filename in filenames:
+            if filename.endswith('.json'):
+                json_files.append(os.path.join(foldername, filename))
+    parsed_data = defaultdict(list)
+
+    for json_file in json_files:
+        # Open and parse the JSON file
+        with (open(json_file, 'r') as file):
+            try:
+                data = json.load(file)
+                if 'diseases' not in data and 'interpretations' not in data:
+                    raise Exception(f"Neither diseases nor interpretations in {json_file}")
+
+                if 'diseases' in data:
+                    for d in data['diseases']:
+                        if d['excluded'] != False:
+                            parsed_data[i['diagnosis']['disease']['id']].append(data)
+
+                if 'interpretations' in data:
+                    for i in data['interpretations']:
+                      parsed_data[i['diagnosis']['disease']['id']].append(data)
+
+            except Exception as e:
+                print(f"Error parsing {json_file}: {e}")
+    return parsed_data
+
+
+def run_genetic_algorithm(
+    patient_hpo_terms_and_labels: pd.DataFrame,
+    num_holdout=3,
+    hpo_graph_subject_col='subject',
+    hpo_graph_object_col='object',
+    hpo_df_pt_or_disease_id_col='person_id',
     # hpo_term_col = 'hpo_id',
-    hyper_n_iterations = 60,
-    hyper_n_profile_pop_size = 100,
-    hyper_n_initial_hpo_terms_per_profile = 5,
-    hyper_n_best_profiles = 20,
-    hyper_fitness_auc = 'auprc',
-    hyper_add_term_p = 0.3,
-    hyper_remove_term_p = 0.3,
+    hyper_n_iterations=60,
+    hyper_n_profile_pop_size=100,
+    hyper_n_initial_hpo_terms_per_profile=5,
+    hyper_n_best_profiles=20,
+    hyper_fitness_auc='auprc',
+    hyper_add_term_p=0.3,
+    hyper_remove_term_p=0.3,
     # hyper_change_weight_p = 0.3,
     # hyper_change_weight_fraction = 0.2,
     ):
 
-    holdouts = train_test_splits.dataframe(),
-    df_pts = patient_hpo_terms_and_labels.dataframe(),
-
     # test split
-    test_split = extract_holdout(df_pts=df_pts,
-                                 holdouts=holdouts,
-                                 no_holdout=holdout_number,
+    test_split = extract_holdout(df_pts=patient_hpo_terms_and_labels,
+                                 holdouts=train_test_splits,
+                                 num_holdout=num_holdout,
                                  training=0,
                                  debug=True)
 
     # training split
     train_split = extract_holdout(df_pts=patient_hpo_terms_and_labels.dataframe(),
-                                  holdouts=train_test_splits.dataframe(),
-                                  no_holdout=holdout_number,
+                                  holdouts=train_test_splits,
+                                  num_holdout=num_holdout,
                                   training=1,
                                   debug=True)
 
+    patient_labels_train = train_split.select('person_id', 'label').dropDuplicates().toPandas()
+    patient_labels_test = test_split.select('person_id', 'label').dropDuplicates().toPandas()
 
-    # END part for adding the extraction of train/test splits
-    patient_labels_train = train_split.select('person_id',
-                                              'label').dropDuplicates().toPandas()
-    patient_labels_test = test_split.select('person_id',
-                                            'label').dropDuplicates().toPandas()
-
-    spark = SparkSession.getActiveSession()
     # Define the schema for HPO profiles
     profile_schema = StructType([
         StructField("profile_id", IntegerType()),
@@ -49,7 +78,6 @@ def run_phenomizer(
         StructField("weight", FloatType())
     ])
 
-    p = Phenomizer({})
     # make ancestor_list
     ancestor_list = p.make_hpo_ancestor_list(hpo_edge_list_df=hpo_graph_df.dataframe())
 
@@ -70,6 +98,7 @@ def run_phenomizer(
                                   ancestor_list=ancestor_list,
                                   n_profiles=hyper_n_profile_pop_size,
                                   hpo_terms_per_profile=hyper_n_initial_hpo_terms_per_profile)
+
     profiles_pd = profiles.toPandas()
     array_of_fitness_results = []
 
@@ -380,12 +409,11 @@ def run_phenomizer(profiles: DataFrame,
 
 
 def intialize_profiles(all_hpo_terms: list,
-                       ancestor_list: DataFrame,
+                       ancestor_list: pd.DataFrame,
                        n_profiles: int,
-                       hpo_terms_per_profile: int) -> DataFrame:
+                       hpo_terms_per_profile: int) -> pd.DataFrame:
 
     # make empty df
-    spark = SparkSession.getActiveSession()
     new_profiles = []
     for i in list(range(n_profiles)):
         for j in list(range(hpo_terms_per_profile)):
