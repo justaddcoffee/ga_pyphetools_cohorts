@@ -1,4 +1,6 @@
 import os
+from ga.ga import parse_phenopackets
+
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
@@ -8,6 +10,5 @@ if __name__ == '__main__':
 
     phenopackets_path = 'phenopacket-store/phenopackets/'
     data = parse_phenopackets(phenopackets_path)
-    parse_phenopackets(phenopackets_path)
 
 
