@@ -54,6 +54,19 @@ def run_genetic_algorithm(
     # hyper_change_weight_fraction = 0.2,
     ):
 
+    # overall strategy:
+    # 1. extract train/test split from patient_hpo_terms_and_labels
+    # 2. initialize semsimian object
+    # 3. initialize profiles
+    # 4. for each iteration:
+    #    a. run termset similarity for each profile vs train split
+    #    b. calculate AUC for each profile
+    #    c. select top N profiles
+    #    d. recombine profiles
+    #    e. add/remove terms from profiles
+    #    f. change weights for profiles
+    # 5. run termset similarity for each profile vs test split
+
     # test split
     test_split = extract_holdout(df_pts=patient_hpo_terms_and_labels,
                                  holdouts=train_test_splits,
@@ -544,11 +557,6 @@ def extract_holdout(df_pts=None, holdouts=None, no_holdout=1, training=1, debug=
     """
     name_holdout_col = 'holdout_' + str(no_holdout)
     holdout_splits = holdouts.select(*['person_id', name_holdout_col])
-
-    if debug:
-        print("columns: " + " ".join(holdout_splits.columns))
-        print("distinct person_id's (holdout_splits): " + str(holdout_splits.select('person_id').distinct().count()))
-        print("distinct person_id's (df_pts): " + str(df_pts.select('person_id').distinct().count()))
 
     joined_df = df_pts.join(holdout_splits, on=["person_id"])
     train_split = joined_df.filter(F.col(name_holdout_col) == training)
