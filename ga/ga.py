@@ -232,8 +232,7 @@ def remove_terms_from_profiles_pd(profiles: pd.DataFrame,
     return profiles.reset_index(drop=True, inplace=False).groupby('profile_id').apply(drop_hpo_term)
 
 
-
-def add_terms_to_profiles(profiles: DataFrame,
+def add_terms_to_profiles(profiles: pd.DataFrame,
                           all_hpo_terms: list,
                           ancestor_list: DataFrame,
                           add_term_p: float = 0.1,
