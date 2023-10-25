@@ -33,7 +33,7 @@ def parse_phenopackets(directory_path) -> dict:
     parsed_phenotypes = extract_phenotypes(parsed_full_phenopacket_data)
 
     return {
-        'full_data': parsed_full_phenopacket_data,
+        'all_data': parsed_full_phenopacket_data,
         'phenotype_data': parsed_phenotypes
     }
 
@@ -52,7 +52,7 @@ def extract_phenotypes(full_data) -> dict:
                     if pt['id'] not in extracted_phenotypes[disease]:
                         extracted_phenotypes[disease][pt['id']] = []
                     extracted_phenotypes[disease][pt['id']].append(this_p)
-    return phenotypes_by_patient
+    return extracted_phenotypes
 
 
 def get_diseases(data) -> list:
