@@ -18,7 +18,8 @@ def make_hpo_closures(
         pred_col='predicate',
         subject_prefixes= ['HP:'],
         object_prefixes= ['HP:'],
-        predicates = ['biolink:subclass_of']
+        predicates = ['biolink:subclass_of'],
+        phenotypic_abnormality = 'HP:0000118'
     ) -> List[Tuple]:
     # get tmp file name
     tmpdir = tempfile.TemporaryDirectory()
@@ -56,9 +57,13 @@ def make_hpo_closures(
     def compute_closure(node):
         return set(nx.ancestors(graph, node))
 
+    # Create a subgraph from the descendants of phenotypic_abnormality
+    descendants = nx.descendants(graph, phenotypic_abnormality)
+    pa_subgraph = graph.subgraph(descendants)
+
     # Compute closures for each node
     closures = []
-    for node in graph.nodes():
+    for node in pa_subgraph.nodes():
         for anc in compute_closure(node):
             closures.append((node, anc))
 
