@@ -1,6 +1,10 @@
 import os
-from ga.ga import parse_phenopackets, run_genetic_algorithm, make_cohort, make_test_train_splits
+import tempfile
 
+import wget
+
+from ga.ga import parse_phenopackets, run_genetic_algorithm, make_cohort, \
+    make_test_train_splits, make_hpo_closures
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
@@ -23,11 +27,18 @@ if __name__ == '__main__':
     pt_df = make_cohort(data['phenotype_data'], disease, negatives)
 
     # test/train split
-    pt_test_train_df = make_test_train_splits(pt_df)
+    num_splits = 5
+    pt_test_train_df = make_test_train_splits(pt_df=pt_df, num_splits=num_splits, seed=42)
 
-    # get first train set
-    train_data_indices = pt_test_train_df[0]['train']
-    pt_df_train = pt_df.iloc[train_data_indices]
+    # download HPO graphq
+    spo: list = make_hpo_closures()
+
+    # run genetic algorithm on each kfold split
+    for i in range(num_splits):
+        run_genetic_algorithm(
+            pt_train_df=pt_test_train_df[i]['train'],
+            pt_test_df=pt_test_train_df[i]['test'],
+        )
 
     pass
 

@@ -1,10 +1,69 @@
 import random
+import tarfile
 import warnings
+import networkx as nx
+from typing import List, Tuple
+
 from sklearn.model_selection import train_test_split, StratifiedKFold
 import pandas as pd
 from collections import defaultdict
 import os
 import json
+import tempfile
+import wget
+
+
+def make_hpo_closures(
+        url = 'https://kg-hub.berkeleybop.io/kg-obo/hp/2023-04-05/hp_kgx_tsv.tar.gz',
+        pred_col='predicate',
+        subject_prefixes= ['HP:'],
+        object_prefixes= ['HP:'],
+        predicates = ['biolink:subclass_of']
+    ) -> List[Tuple]:
+    # get tmp file name
+    tmpdir = tempfile.TemporaryDirectory()
+    tmpfile = tempfile.NamedTemporaryFile().file.name
+    wget.download(url, tmpfile)
+
+    this_tar = tarfile.open(tmpfile, 'r:gz')
+    this_tar.extractall(path=tmpdir.name)
+
+    # show files in tmpdir
+    edge_files = [f for f in os.listdir(tmpdir.name) if 'edges' in f]
+    if len(edge_files) != 1:
+        raise RuntimeError("Didn't find exactly one edge file in {}".format(tmpdir.name))
+    edge_file = edge_files[0]
+
+    edges_df = pd.read_csv(os.path.join(tmpdir.name, edge_file), sep='\t')
+    if pred_col not in edges_df.columns:
+        raise RuntimeError("Didn't find predicate column {} in {} cols: {}".format(pred_col, edge_file, "\n".join(edges_df.columns)))
+
+    # get edges of interest
+    edges_df = edges_df[edges_df[pred_col].isin(predicates)]
+    # get edges involving nodes of interest
+    edges_df = edges_df[edges_df['subject'].str.startswith(tuple(subject_prefixes))]
+    edges_df = edges_df[edges_df['object'].str.startswith(tuple(object_prefixes))]
+
+    # make into list of tuples
+    # note that we are swapping order of edges (object -> subject) so that descendants are leaf terms
+    # and ancestors are root nodes (assuming edges are subclass_of edges)
+    edges = list(edges_df[['object', 'subject']].itertuples(index=False, name=None))
+
+    # Create a directed graph using NetworkX
+    graph = nx.DiGraph(edges)
+
+    # Function to compute closure for a given node
+    def compute_closure(node):
+        return set(nx.ancestors(graph, node))
+
+    # Compute closures for each node
+    closures = []
+    for node in graph.nodes():
+        for anc in compute_closure(node):
+            closures.append((node, anc))
+
+    return closures
+
 
 
 def make_test_train_splits(pt_df,
@@ -144,12 +203,9 @@ def get_diseases(data) -> list:
 
 
 def run_genetic_algorithm(
-    patient_hpo_terms_and_labels: pd.DataFrame,
-    num_holdout=3,
-    hpo_graph_subject_col='subject',
-    hpo_graph_object_col='object',
-    hpo_df_pt_or_disease_id_col='person_id',
-    # hpo_term_col = 'hpo_id',
+    pt_train_df: pd.DataFrame,
+    pt_test_df: pd.DataFrame,
+
     hyper_n_iterations=60,
     hyper_n_profile_pop_size=100,
     hyper_n_initial_hpo_terms_per_profile=5,
@@ -157,8 +213,8 @@ def run_genetic_algorithm(
     hyper_fitness_auc='auprc',
     hyper_add_term_p=0.3,
     hyper_remove_term_p=0.3,
-    # hyper_change_weight_p = 0.3,
-    # hyper_change_weight_fraction = 0.2,
+    hyper_change_weight_p=0.3,
+    hyper_change_weight_fraction=0.2,
     ):
 
     # overall strategy:
@@ -174,29 +230,7 @@ def run_genetic_algorithm(
     #    f. change weights for profiles
     # 5. run termset similarity for each profile vs test split
 
-    # test split
-    test_split = extract_holdout(df_pts=patient_hpo_terms_and_labels,
-                                 holdouts=train_test_splits,
-                                 num_holdout=num_holdout,
-                                 training=0,
-                                 debug=True)
-
-    # training split
-    train_split = extract_holdout(df_pts=patient_hpo_terms_and_labels.dataframe(),
-                                  holdouts=train_test_splits,
-                                  num_holdout=num_holdout,
-                                  training=1,
-                                  debug=True)
-
-    patient_labels_train = train_split.select('person_id', 'label').dropDuplicates().toPandas()
-    patient_labels_test = test_split.select('person_id', 'label').dropDuplicates().toPandas()
-
-    # Define the schema for HPO profiles
-    profile_schema = StructType([
-        StructField("profile_id", IntegerType()),
-        StructField("HPO_term", StringType()),
-        StructField("weight", FloatType())
-    ])
+    # pandas df with profile data
 
     # make ancestor_list
     ancestor_list = p.make_hpo_ancestor_list(hpo_edge_list_df=hpo_graph_df.dataframe())
