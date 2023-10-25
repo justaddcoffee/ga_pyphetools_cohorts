@@ -1,4 +1,5 @@
 import random
+import warnings
 
 import pandas as pd
 from collections import defaultdict
@@ -6,34 +7,67 @@ import os
 import json
 
 
-def parse_phenopackets(directory_path):
+def parse_phenopackets(directory_path) -> dict:
     json_files = []
     for foldername, subfolders, filenames in os.walk(directory_path):
         for filename in filenames:
             if filename.endswith('.json'):
                 json_files.append(os.path.join(foldername, filename))
-    parsed_data = defaultdict(list)
+    parsed_full_phenopacket_data = defaultdict(list)
 
     for json_file in json_files:
         # Open and parse the JSON file
         with (open(json_file, 'r') as file):
             try:
                 data = json.load(file)
-                if 'diseases' not in data and 'interpretations' not in data:
-                    raise Exception(f"Neither diseases nor interpretations in {json_file}")
 
-                if 'diseases' in data:
-                    for d in data['diseases']:
-                        if d['excluded'] != False:
-                            parsed_data[i['diagnosis']['disease']['id']].append(data)
-
-                if 'interpretations' in data:
-                    for i in data['interpretations']:
-                      parsed_data[i['diagnosis']['disease']['id']].append(data)
+                # get diseases for this phenopacket
+                diseases = get_diseases(data)
+                for d in diseases:
+                    parsed_full_phenopacket_data[d].append(data)
 
             except Exception as e:
                 print(f"Error parsing {json_file}: {e}")
-    return parsed_data
+
+    # go through parsed_full_phenopacket_data and extract phenotypic features for each patient
+    parsed_phenotypes = extract_phenotypes(parsed_full_phenopacket_data)
+
+    return {
+        'full_data': parsed_full_phenopacket_data,
+        'phenotype_data': parsed_phenotypes
+    }
+
+
+def extract_phenotypes(full_data) -> dict:
+    extracted_phenotypes = defaultdict(dict)
+    for disease, data in full_data.items():
+        # this_pt_phenotypes = []
+        for pt in data:
+            if 'phenotypicFeatures' in pt:
+                for p in pt['phenotypicFeatures']:
+                    # add this phenotype to the set of phenotypes
+                    this_p = (p['type']['id'],
+                              p['type']['label'],
+                              'excluded' if 'excluded' in p else 'observed')
+                    if pt['id'] not in extracted_phenotypes[disease]:
+                        extracted_phenotypes[disease][pt['id']] = []
+                    extracted_phenotypes[disease][pt['id']].append(this_p)
+    return phenotypes_by_patient
+
+
+def get_diseases(data) -> list:
+    diseases = set()
+    if 'diseases' in data:
+        for d in data['diseases']:
+            if d['excluded'] is not True:
+                # add this disease to the set of diseases
+                diseases.add(d['term']['label'])
+
+    if 'interpretations' in data:
+        for i in data['interpretations']:
+            diseases.add(i['diagnosis']['disease']['label'])
+
+    return list(diseases)
 
 
 def run_genetic_algorithm(
@@ -234,9 +268,9 @@ def remove_terms_from_profiles_pd(profiles: pd.DataFrame,
 
 def add_terms_to_profiles(profiles: pd.DataFrame,
                           all_hpo_terms: list,
-                          ancestor_list: DataFrame,
+                          ancestor_list: pd.DataFrame,
                           add_term_p: float = 0.1,
-                          ) -> DataFrame:
+                          ) -> pd.DataFrame:
     check_schema(profiles=profiles)
 
     # Define the Pandas UDF function
@@ -330,11 +364,10 @@ def add_terms_to_profiles_pd(profiles: pd.DataFrame,
     return profiles
 
 
-
-def change_weights_for_profiles(profiles: DataFrame,
+def change_weights_for_profiles(profiles: pd.DataFrame,
                                 change_weight_p: float = 0.1,
                                 change_weight_fraction: float = 0.2
-                                ) -> DataFrame:
+                                ) -> pd.DataFrame:
     check_schema(profiles=profiles)
 
     # choose random number to decide remove existing term or not (10%?)
@@ -354,10 +387,10 @@ def change_weights_for_profiles(profiles: DataFrame,
     return profiles.withColumn("weight", change_weight_udf(F.col("weight")))
 
 
-def run_phenomizer(profiles: DataFrame,
-                   patient_data: DataFrame,
-                   patient_labels: DataFrame,
-                   mica_df: DataFrame) -> DataFrame:
+def run_phenomizer(profiles: pd.DataFrame,
+                   patient_data: pd.DataFrame,
+                   patient_labels: pd.DataFrame,
+                   mica_df: pd.DataFrame) -> pd.DataFrame:
     """Given a set of profiles and patient data, run phenomizer on profiles vs patient data and return metrics on profiles (AUROC, AUPRC)
     based on the performance of each profile in predicting label
     profiles: a dataframe containing HPO terms for each profile
