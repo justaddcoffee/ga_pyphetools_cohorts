@@ -16,19 +16,22 @@ def make_test_train_splits(pt_df,
     # given a pandas df with these columns
     # 'person_id', 'hpo_term_id', 'hpo_term_label', 'excluded', 'patient_label'
 
-    # return a list of dicts with train/test person_ids
-    pt_id_df = pt_df[[pt_id_col, pt_label_col]].drop_duplicates()
+    # return a list of num_splits dicts with keys 'train' and 'test' containing
+    # pandas dfs with the train/test split for each fold
 
     # make test/train split
     skf = StratifiedKFold(n_splits=num_splits, shuffle=shuffle, random_state=seed)
 
-    train_test_split_indices = []
+    pt_id_df = pt_df[[pt_id_col, pt_label_col]].drop_duplicates()
+
+    train_test_kfolds = []
     for i, (train_index, test_index) in enumerate(skf.split(pt_id_df, pt_id_df[pt_label_col])):
-        train_test_split_indices.append({
-            'train': train_index,
-            'test': test_index
+        # make a pandas df with train, another with test
+        train_test_kfolds.append({
+            'train': pt_df.iloc[train_index],
+            'test': pt_df.iloc[test_index]
         })
-    return train_test_split_indices
+    return train_test_kfolds
 
 
 def make_cohort(data, disease, negatives,
