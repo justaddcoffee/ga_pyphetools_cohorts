@@ -11,6 +11,14 @@ if __name__ == '__main__':
     data = parse_phenopackets(phenopackets_path)
 
     # make a cohort to analyze
+    disease = 'Marfan syndrome'
+
+    negatives = list(data['phenotype_data'].keys())
+    negatives.remove(disease)
+    negatives.remove('Marfan lipodystrophy syndrome')
+    negatives.sort()
+
+    # make pandas dataframe
 
     pass
 
