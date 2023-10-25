@@ -1,5 +1,5 @@
 import os
-from ga.ga import parse_phenopackets, run_genetic_algorithm, make_cohort
+from ga.ga import parse_phenopackets, run_genetic_algorithm, make_cohort, make_test_train_split
 
 
 # Press the green button in the gutter to run the script.
@@ -23,6 +23,7 @@ if __name__ == '__main__':
     pt_df = make_cohort(data['phenotype_data'], disease, negatives)
 
     # test/train split
+    pt_test_train_df = make_test_train_split(pt_df)
 
     pass
 

@@ -10,6 +10,7 @@ packages = [{include = "ga_pyphetools"}]
 python = "^3.10"
 pandas = "^2"
 semsimian = "^0.2.8"
+sklearn = "^0.0"
 
 
 [build-system]

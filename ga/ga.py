@@ -1,10 +1,27 @@
 import random
 import warnings
-
+from sklearn.model_selection import train_test_split, KFold
 import pandas as pd
 from collections import defaultdict
 import os
 import json
+
+
+def make_test_train_split(pt_df,
+                          pt_label_col='patient_label',
+                          test_fraction=0.1,
+                          seed=42):
+    # given a pandas df with these columns
+    # 'person_id', 'hpo_term_id', 'hpo_term_label', 'excluded', 'patient_label'
+
+    # make a stratified test/train split
+    train, validate = train_test_split(pt_df,
+                                       test_size=test_fraction,
+                                       random_state=seed,
+                                       stratify=pt_df[pt_label_col])
+    # kf = KFold(n_splits=5, *, shuffle=True, random_state=seed)
+
+    pass
 
 
 def make_cohort(data, disease, negatives,
