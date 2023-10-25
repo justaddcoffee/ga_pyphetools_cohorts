@@ -8,7 +8,8 @@ import json
 
 
 def make_cohort(data, disease, negatives,
-                drop_duplicates_phenotypes=True
+                drop_duplicates_phenotypes=True,
+                expected_vals_for_excluded_col=['observed', 'excluded']
                 ) -> pd.DataFrame:
     # make a pandas dataframe with all disease cases as positive and negative cases as
     # negative
@@ -39,6 +40,12 @@ def make_cohort(data, disease, negatives,
     neg_df = pd.DataFrame(neg_cases, columns=these_columns)
 
     pt_df = pd.concat([pos_df, neg_df], ignore_index=True)
+
+    if 'excluded' not in pt_df.columns or set(list(pt_df['excluded'].unique())) != set(expected_vals_for_excluded_col):
+        raise RuntimeError("Didn't get the expected values for the 'excluded' column: {}".format(str(list(pt_df['excluded'].unique()))))
+
+    # convert observed/excluded to boolean
+    pt_df['excluded'] = pt_df['excluded'].apply(lambda x: True if x == 'excluded' else False)
 
     if drop_duplicates_phenotypes:
         pt_df = pt_df.drop_duplicates(subset=['person_id', 'hpo_term_id', 'excluded', 'patient_label'])

@@ -22,6 +22,8 @@ if __name__ == '__main__':
     # make pandas dataframe
     pt_df = make_cohort(data['phenotype_data'], disease, negatives)
 
+    # test/train split
+
     pass
 
 
