@@ -7,6 +7,45 @@ import os
 import json
 
 
+def make_cohort(data, disease, negatives,
+                drop_duplicates_phenotypes=True
+                ) -> pd.DataFrame:
+    # make a pandas dataframe with all disease cases as positive and negative cases as
+    # negative
+    these_columns=['person_id', 'hpo_term_id', 'hpo_term_label', 'excluded', 'patient_label']
+
+    # data looks like
+    # data['Marfan syndrome']['patient_id'] = [list of phenotypes]
+
+    # phenotypes look like:
+    # ('HP:0011968', 'Feeding difficulties', 'observed')
+
+    # columns:
+    # person_id, hpo_term_id, hpo_term_label, excluded, patient_label
+
+    # make positive cases
+    pos_cases = []
+    for pt in data[disease]:
+        for phenotype in data[disease][pt]:
+            pos_cases.append([pt, phenotype[0], phenotype[1], phenotype[2], 1])
+    pos_df = pd.DataFrame(pos_cases, columns=these_columns)
+
+    # make negative cases
+    neg_cases = []
+    for disease in negatives:
+        for pt in data[disease]:
+            for phenotype in data[disease][pt]:
+                neg_cases.append([pt, phenotype[0], phenotype[1], phenotype[2], 0])
+    neg_df = pd.DataFrame(neg_cases, columns=these_columns)
+
+    pt_df = pd.concat([pos_df, neg_df], ignore_index=True)
+
+    if drop_duplicates_phenotypes:
+        pt_df = pt_df.drop_duplicates(subset=['person_id', 'hpo_term_id', 'excluded', 'patient_label'])
+
+    return pt_df
+
+
 def parse_phenopackets(directory_path) -> dict:
     json_files = []
     for foldername, subfolders, filenames in os.walk(directory_path):

@@ -1,5 +1,6 @@
 import os
-from ga.ga import parse_phenopackets, run_genetic_algorithm
+from ga.ga import parse_phenopackets, run_genetic_algorithm, make_cohort
+
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
@@ -19,6 +20,7 @@ if __name__ == '__main__':
     negatives.sort()
 
     # make pandas dataframe
+    pt_df = make_cohort(data['phenotype_data'], disease, negatives)
 
     pass
 
