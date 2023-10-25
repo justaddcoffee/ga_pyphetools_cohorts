@@ -1,27 +1,34 @@
 import random
 import warnings
-from sklearn.model_selection import train_test_split, KFold
+from sklearn.model_selection import train_test_split, StratifiedKFold
 import pandas as pd
 from collections import defaultdict
 import os
 import json
 
 
-def make_test_train_split(pt_df,
-                          pt_label_col='patient_label',
-                          test_fraction=0.1,
-                          seed=42):
+def make_test_train_splits(pt_df,
+                           pt_id_col='person_id',
+                           pt_label_col='patient_label',
+                           num_splits=5,
+                           shuffle=True,
+                           seed=42) -> list[dict]:
     # given a pandas df with these columns
     # 'person_id', 'hpo_term_id', 'hpo_term_label', 'excluded', 'patient_label'
 
-    # make a stratified test/train split
-    train, validate = train_test_split(pt_df,
-                                       test_size=test_fraction,
-                                       random_state=seed,
-                                       stratify=pt_df[pt_label_col])
-    # kf = KFold(n_splits=5, *, shuffle=True, random_state=seed)
+    # return a list of dicts with train/test person_ids
+    pt_id_df = pt_df[[pt_id_col, pt_label_col]].drop_duplicates()
 
-    pass
+    # make test/train split
+    skf = StratifiedKFold(n_splits=num_splits, shuffle=shuffle, random_state=seed)
+
+    train_test_split_indices = []
+    for i, (train_index, test_index) in enumerate(skf.split(pt_id_df, pt_id_df[pt_label_col])):
+        train_test_split_indices.append({
+            'train': train_index,
+            'test': test_index
+        })
+    return train_test_split_indices
 
 
 def make_cohort(data, disease, negatives,
