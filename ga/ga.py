@@ -20,7 +20,7 @@ def make_hpo_closures(
         subject_prefixes= ['HP:'],
         object_prefixes= ['HP:'],
         predicates = ['biolink:subclass_of'],
-        phenotypic_abnormality = 'HP:0000118'
+        root_node_to_use ='HP:0000118'
     ) -> List[Tuple]:
     # get tmp file name
     tmpdir = tempfile.TemporaryDirectory()
@@ -55,7 +55,7 @@ def make_hpo_closures(
     graph = nx.DiGraph(edges)
 
     # Create a subgraph from the descendants of phenotypic_abnormality
-    descendants = nx.descendants(graph, phenotypic_abnormality)
+    descendants = nx.descendants(graph, root_node_to_use)
     pa_subgraph = graph.subgraph(descendants)
 
     def compute_closure(node):
@@ -67,10 +67,9 @@ def make_hpo_closures(
 
     for node in tqdm(pa_subgraph.nodes(), desc="Computing closures"):
         for anc in compute_closure(node):
-            closures.append((node, anc))
+            closures.append((node, 'dummy_predicate', anc))
 
     return closures
-
 
 
 def make_test_train_splits(pt_df,
@@ -102,7 +101,7 @@ def make_test_train_splits(pt_df,
 
 def make_cohort(data, disease, negatives,
                 drop_duplicates_phenotypes=True,
-                expected_vals_for_excluded_col=['observed', 'excluded']
+                expected_vals_for_excluded_col=['observed', 'excluded'],
                 ) -> pd.DataFrame:
     # make a pandas dataframe with all disease cases as positive and negative cases as
     # negative
@@ -211,45 +210,87 @@ def get_diseases(data) -> list:
     return list(diseases)
 
 
-def run_genetic_algorithm(
-    pt_train_df: pd.DataFrame,
-    pt_test_df: pd.DataFrame,
+def initialize_profiles(all_hpo_terms: list,
+                        n_profiles: int,
+                        hpo_terms_per_profile: int,
+                        fraction_negated_terms: float = 0.1,
+                        ) -> pd.DataFrame:
 
-    hyper_n_iterations=60,
-    hyper_n_profile_pop_size=100,
-    hyper_n_initial_hpo_terms_per_profile=5,
-    hyper_n_best_profiles=20,
-    hyper_fitness_auc='auprc',
-    hyper_add_term_p=0.3,
-    hyper_remove_term_p=0.3,
-    hyper_change_weight_p=0.3,
-    hyper_change_weight_fraction=0.2,
+    # make empty df
+    new_profiles = []
+    for i in list(range(n_profiles)):
+        for j in list(range(hpo_terms_per_profile)):
+            hpo_term = random.choice(all_hpo_terms)
+            negated = True if random.random() < fraction_negated_terms else False
+            new_profiles.append([i, hpo_term, random.random(), negated])
+    return pd.DataFrame(new_profiles, columns=['profile_id', 'hpo_term_id', 'weight', 'negated'])
+
+
+def run_genetic_algorithm(
+        semsimian,
+        spo: list[tuple],
+        pt_train_df: pd.DataFrame,
+        pt_test_df: pd.DataFrame,
+
+        hyper_n_iterations=60,
+        hyper_n_profile_pop_size=100,
+        hyper_n_initial_hpo_terms_per_profile=5,
+        hyper_n_fraction_negated_terms=0.1,
+        hyper_n_best_profiles=20,
+        hyper_fitness_auc='auprc',
+        hyper_add_term_p=0.3,
+        hyper_remove_term_p=0.3,
+        hyper_change_weight_p=0.3,
+        hyper_change_weight_fraction=0.2,
     ):
 
     # overall strategy:
-    # 1. extract train/test split from patient_hpo_terms_and_labels
-    # 2. initialize semsimian object
-    # 3. initialize profiles
-    # 4. for each iteration:
+    # 1. initialize profiles
+    # 2. for each iteration:
     #    a. run termset similarity for each profile vs train split
     #    b. calculate AUC for each profile
     #    c. select top N profiles
     #    d. recombine profiles
     #    e. add/remove terms from profiles
     #    f. change weights for profiles
-    # 5. run termset similarity for each profile vs test split
+    # 3. run termset similarity for each profile vs test split
+
+    # test some random similarities
+    for term1 in random.sample(list(pt_train_df['hpo_term_id'].unique()), 10):
+        for term2 in random.sample(list(pt_train_df['hpo_term_id'].unique()), 10):
+            sim = semsimian.termset_pairwise_similarity_weighted_negated(
+                subject_dat=[(term1, 2, False)], object_dat=[(term2, 2, False)])
+            print("sim between {} and {}: {}".format(term1, term2, sim))
 
     # pandas df with profile data
 
-    # make ancestor_list
-    ancestor_list = p.make_hpo_ancestor_list(hpo_edge_list_df=hpo_graph_df.dataframe())
+    all_hpo_terms = list(set([e[0] for e in spo]))
 
+    profiles_pd = initialize_profiles(all_hpo_terms=all_hpo_terms,
+                                      n_profiles=hyper_n_profile_pop_size,
+                                      fraction_negated_terms=hyper_n_fraction_negated_terms,
+                                      hpo_terms_per_profile=hyper_n_initial_hpo_terms_per_profile)
 
-
-    profiles_pd = profiles.toPandas()
     array_of_fitness_results = []
 
-    for i in list(range(hyper_n_iterations)):
+    for i in tqdm(list(range(hyper_n_iterations)), desc="Running genetic algorithm"):
+
+        # make tuples for one example patient
+        this_pt = pt_train_df[pt_train_df['person_id'] == 'PMID_12203992_B3']
+        this_pt['weight'] = 1  # all patient phenotypes are weighted equally
+        this_pt = this_pt[['hpo_term_id', 'weight', 'negated']]
+        this_pt_tuples = list(this_pt.itertuples(index=False, name=None))
+
+        # make tuples for one profile
+        this_profile = profiles_pd[profiles_pd['profile_id'] == 0]
+        this_profile = this_profile[['hpo_term_id', 'weight', 'negated']]
+        this_profile_tuples = list(this_profile.itertuples(index=False, name=None))
+
+        semsimian.termset_pairwise_similarity_weighted_negated(
+            subject_dat=this_pt_tuples,
+            object_dat=this_profile_tuples
+        )
+
         phenomizer_results = p.compare_two_dfs_similarity_long_spark_df(df1=train_split,
                                                                         df1_id_col='person_id',
                                                                         df1_hpo_term_col='hpo_term_id',
@@ -551,20 +592,6 @@ def run_phenomizer(profiles: pd.DataFrame,
     phenomizer_metrics_df = phenomizer_results.groupBy('id2').apply(calculate_auc_metrics)
 
     return phenomizer_metrics_df.toPandas()
-
-
-def intialize_profiles(all_hpo_terms: list,
-                       ancestor_list: pd.DataFrame,
-                       n_profiles: int,
-                       hpo_terms_per_profile: int) -> pd.DataFrame:
-
-    # make empty df
-    new_profiles = []
-    for i in list(range(n_profiles)):
-        for j in list(range(hpo_terms_per_profile)):
-            hpo_term = random.choice(all_hpo_terms)
-            new_profiles.append([i, hpo_term, random.random()])
-    return spark.createDataFrame(data=new_profiles, schema=profile_schema)
 
 
 def check_schema(profiles, expected_cols=["profile_id", "HPO_term", "weight"]):
