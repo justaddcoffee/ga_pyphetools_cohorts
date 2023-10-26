@@ -4,7 +4,7 @@ version = "0.1.0"
 description = ""
 authors = ["Justin Reese <justaddcoffee@gmail.com>"]
 readme = "README.md"
-packages = [{include = "ga_pyphetools"}]
+packages = [{include = "ga"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
