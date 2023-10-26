@@ -1,10 +1,8 @@
 import random
 import tarfile
-import warnings
 import networkx as nx
 from typing import List, Tuple
-
-from sklearn.model_selection import train_test_split, StratifiedKFold
+from sklearn.model_selection import StratifiedKFold
 import pandas as pd
 from collections import defaultdict
 import os
@@ -12,6 +10,7 @@ import json
 import tempfile
 import wget
 from tqdm import tqdm
+import itertools
 
 
 def make_hpo_closures(
@@ -226,6 +225,42 @@ def initialize_profiles(all_hpo_terms: list,
     return pd.DataFrame(new_profiles, columns=['profile_id', 'hpo_term_id', 'weight', 'negated'])
 
 
+def compare_profiles_to_patients(
+        semsimian,
+        pt_train_df: pd.DataFrame,
+        profiles_pd: pd.DataFrame):
+    # Assuming pt_train_df and profiles_pd are your pandas DataFrames
+
+    # Get unique person_ids and profile_ids
+    person_ids = pt_train_df['person_id'].unique()
+    profile_ids = profiles_pd['profile_id'].unique()
+
+    # Define your function
+    def apply_function(person_id, profile_id):
+        this_pt = pt_train_df[pt_train_df['person_id'] == person_id]
+        this_pt['weight'] = 1  # all patient phenotypes are weighted equally
+        this_pt = this_pt[['hpo_term_id', 'weight', 'negated']]
+        this_pt_tuples = list(this_pt.itertuples(index=False, name=None))
+
+        this_profile = profiles_pd[profiles_pd['profile_id'] == profile_id]
+        this_profile = this_profile[['hpo_term_id', 'weight', 'negated']]
+        this_profile_tuples = list(this_profile.itertuples(index=False, name=None))
+
+        return semsimian.termset_pairwise_similarity_weighted_negated(
+            subject_dat=this_pt_tuples,
+            object_dat=this_profile_tuples
+        )
+
+    # Generate all combinations of person_ids and profile_ids
+    combinations = list(itertools.product(person_ids, profile_ids))
+
+    # Apply the function to all combinations using pd.DataFrame.apply()
+    result = pd.DataFrame(combinations, columns=['person_id', 'profile_id'])
+    result['similarity'] = result.apply(lambda row: apply_function(row['person_id'], row['profile_id']), axis=1)
+    return result
+
+
+
 def run_genetic_algorithm(
         semsimian,
         spo: list[tuple],
@@ -291,17 +326,11 @@ def run_genetic_algorithm(
             object_dat=this_profile_tuples
         )
 
-        phenomizer_results = p.compare_two_dfs_similarity_long_spark_df(df1=train_split,
-                                                                        df1_id_col='person_id',
-                                                                        df1_hpo_term_col='hpo_term_id',
-                                                                        mica_df=mica_df,
-                                                                        df2=spark.createDataFrame(
-                                                                            profiles_pd,
-                                                                            schema=profile_schema),
-                                                                        df2_id_col='profile_id',
-                                                                        df2_hpo_term_col='HPO_term')
+        # run termset similarity for each profile vs each patient in train split
+        sim_results = compare_profiles_to_patients(semsimian=semsimian,
+                                                   pt_train_df=pt_train_df,
+                                                   profiles_pd=profiles_pd)
 
-        phenomizer_results_pd = phenomizer_results.toPandas()
         phenomizer_results_pd = phenomizer_results_pd.merge(patient_labels_train,
                                                             left_on='id1',
                                                             right_on='person_id',
