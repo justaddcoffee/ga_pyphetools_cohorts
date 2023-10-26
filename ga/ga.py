@@ -145,6 +145,8 @@ def make_cohort(data, disease, negatives,
 
 def parse_phenopackets(directory_path) -> dict:
     json_files = []
+    if not os.path.exists(directory_path):
+        raise RuntimeError("Didn't find directory {}".format(directory_path))
     for foldername, subfolders, filenames in os.walk(directory_path):
         for filename in filenames:
             if filename.endswith('.json'):
