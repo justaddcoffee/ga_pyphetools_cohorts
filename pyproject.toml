@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "ga-pyphetools"
+name = "ga"
 version = "0.1.0"
 description = ""
 authors = ["Justin Reese <justaddcoffee@gmail.com>"]
