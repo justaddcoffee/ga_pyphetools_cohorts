@@ -10,9 +10,9 @@ packages = [{include = "ga_pyphetools"}]
 python = "^3.10"
 pandas = "^2"
 semsimian = "^0.2.8"
-sklearn = "^0.0"
-wget = "^0.0"
-networkx = "*"
+networkx = "^3.2"
+wget = "^3.2"
+scikit-learn = "^1.3.2"
 
 [build-system]
 requires = ["poetry-core"]
