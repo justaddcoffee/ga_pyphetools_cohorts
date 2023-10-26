@@ -295,13 +295,11 @@ def run_genetic_algorithm(
     # 3. run termset similarity for each profile vs test split
 
     # test some random similarities
-    for term1 in random.sample(list(pt_train_df['hpo_term_id'].unique()), 10):
-        for term2 in random.sample(list(pt_train_df['hpo_term_id'].unique()), 10):
-            sim = semsimian.termset_pairwise_similarity_weighted_negated(
-                subject_dat=[(term1, 2, False)], object_dat=[(term2, 2, False)])
-            print("sim between {} and {}: {}".format(term1, term2, sim))
-
-    # pandas df with profile data
+    # for term1 in random.sample(list(pt_train_df['hpo_term_id'].unique()), 10):
+    #     for term2 in random.sample(list(pt_train_df['hpo_term_id'].unique()), 10):
+    #         sim = semsimian.termset_pairwise_similarity_weighted_negated(
+    #             subject_dat=[(term1, 2, False)], object_dat=[(term2, 2, False)])
+    #         print("sim between {} and {}: {}".format(term1, term2, sim))
 
     all_hpo_terms = list(set([e[0] for e in spo]))
 
