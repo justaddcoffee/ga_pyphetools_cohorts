@@ -644,11 +644,6 @@ def recombine_profiles_pd(profiles: pd.DataFrame, ancestors_df: pd.DataFrame, nu
     # Join profiles with ancestors to get a DataFrame with profile_id, HPO_term, weight, and ancestors
     joined_profiles_df = pd.merge(profiles, ancestors_df, left_on='HPO_term', right_on='hpo_term_id', how='left').drop('hpo_term_id', axis=1)
 
-    # p1 = profiles[['profile_id']].drop_duplicates()
-    # p1 = p1.rename(columns={"profile_id": "p1"})
-    # p2 = profiles[['profile_id']].drop_duplicates()
-    # p2 = p2.rename(columns={"profile_id": "p2"})
-
     from itertools import product
     all_pids = list(set(profiles['profile_id'].to_list()))
 
