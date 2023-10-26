@@ -250,28 +250,6 @@ def compare_profiles_to_patients(
         this_profile = this_profile[['hpo_term_id', 'weight', 'negated']]
         this_profile_tuples = list(this_profile.itertuples(index=False, name=None))
 
-        if debug:
-            print(f"Comparing {person_id} and {profile_id}")
-            print("Patient: " + "\n".join([str(t) for t in this_pt_tuples]))
-            print("\n")
-            print("Profile: " + "\n".join([str(t) for t in this_profile_tuples]))
-
-            # make some test data
-            pt_test_tuples = [('HP:0002650', 1.0, False),
-                                ('HP:0000098', 1.0, False),
-                                ('HP:0001166', 1.0, False),  # <-- this term causes a panic - remove this and it returns 0.0
-                                ('HP:0001083', 1.0, False),
-                                ('HP:0000545', 1.0, False),
-                                ('HP:0002616', 1.0, False)]
-            profile_test_tuples = [('HP:0033127', 0.7594267694796112, True),
-                                    ('HP:0033677', 0.2590903171508303, False),
-                                    ('HP:0010730', 0.7373312314046617, False),
-                                    ('HP:0005206', 0.16651076083997507, False),
-                                    ('HP:0033729', 0.30911732402073555, False)]
-            test_sim = semsimian.termset_pairwise_similarity_weighted_negated(
-                subject_dat=pt_test_tuples,
-                object_dat=profile_test_tuples)
-
         try:
             return semsimian.termset_pairwise_similarity_weighted_negated(
                 subject_dat=this_pt_tuples,

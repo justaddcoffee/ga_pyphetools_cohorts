@@ -8,22 +8,21 @@ from ga.ga import parse_phenopackets, run_genetic_algorithm, make_cohort, \
 
 # Press the green button in the gutter to run the script.
 def run_smoke_test():
-    example_profile_tuples = [('HP:0001480', 0.9877573647870056, False),
-                              ('HP:0012092', 0.4428168573454814, False),
-                              ('HP:0032539', 0.19755265969899005, False),
-                              ('HP:0034253', 0.6673664558674761, False),
-                              ('HP:0001406', 0.9123756704460753, False)]
-
-    example_pt_tuples = [('HP:0002650', 1.0, False),
-                         ('HP:0000098', 1.0, False),
-                         ('HP:0001166', 1.0, False),
-                         ('HP:0001083', 1.0, False),
-                         ('HP:0000545', 1.0, False),
-                         ('HP:0002616', 1.0, False)]
-    # sim = s.termset_pairwise_similarity(profile_tuples=example_profile_tuples, pt_tuples=example_pt_tuples)
-    sim = s.termset_pairwise_similarity_weighted_negated(
-        subject_dat=example_profile_tuples,
-        object_dat=example_pt_tuples)
+    # this termset sim seems to be 0.0, which seems fishy
+    pt_test_tuples = [('HP:0002650', 1.0, False),
+                      ('HP:0000098', 1.0, False),
+                      ('HP:0001166', 1.0, False), # <-- this term causes a panic - remove this and it returns 0.0
+                      ('HP:0001083', 1.0, False),
+                      ('HP:0000545', 1.0, False),
+                      ('HP:0002616', 1.0, False)]
+    profile_test_tuples = [('HP:0033127', 0.7594267694796112, True),
+                           ('HP:0033677', 0.2590903171508303, False),
+                           ('HP:0010730', 0.7373312314046617, False),
+                           ('HP:0005206', 0.16651076083997507, False),
+                           ('HP:0033729', 0.30911732402073555, False)]
+    test_sim = s.termset_pairwise_similarity_weighted_negated(
+        subject_dat=pt_test_tuples,
+        object_dat=profile_test_tuples)
     return sim
 
 
