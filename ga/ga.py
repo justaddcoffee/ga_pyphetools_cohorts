@@ -53,13 +53,12 @@ def make_hpo_closures(
     # Create a directed graph using NetworkX
     graph = nx.DiGraph(edges)
 
-    # Function to compute closure for a given node
-    def compute_closure(node):
-        return set(nx.ancestors(graph, node))
-
     # Create a subgraph from the descendants of phenotypic_abnormality
     descendants = nx.descendants(graph, phenotypic_abnormality)
     pa_subgraph = graph.subgraph(descendants)
+
+    def compute_closure(node):
+        return set(nx.ancestors(graph, node))
 
     # Compute closures for each node
     closures = []
