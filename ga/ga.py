@@ -1,5 +1,7 @@
 import random
 import tarfile
+import warnings
+
 import networkx as nx
 from typing import List, Tuple
 
@@ -264,6 +266,22 @@ def compare_profiles_to_patients(
     return result
 
 
+def make_ancestors_list(spo):
+    # Create a dictionary to store ancestors for each node
+    ancestors_dict = {}
+    for node, _, ancestor in spo:
+        if node not in ancestors_dict:
+            ancestors_dict[node] = []
+        ancestors_dict[node].append(ancestor)
+
+    # Convert the dictionary to a list of tuples for DataFrame
+    result_data = [(node, ancestors_dict[node]) for node in ancestors_dict]
+
+    # Create a Pandas DataFrame
+    df = pd.DataFrame(result_data, columns=['hpo_term_id', 'ancestors'])
+    return df
+
+
 def run_genetic_algorithm(
         semsimian,
         pt_train_df: pd.DataFrame,
@@ -302,6 +320,9 @@ def run_genetic_algorithm(
 
     all_hpo_terms = list(set([e[0] for e in semsimian.get_spo()]))
 
+    # make ancestor pd df
+    ancestors_pd = make_ancestors_list(semsimian.get_spo())
+
     profiles_pd = initialize_profiles(all_hpo_terms=all_hpo_terms,
                                       n_profiles=hyper_n_profile_pop_size,
                                       fraction_negated_terms=hyper_n_fraction_negated_terms,
@@ -334,8 +355,11 @@ def run_genetic_algorithm(
         continue
 
         profiles_pd = recombine_profiles_pd(profiles=profiles_pd,
-                                            ancestors_df=ancestor_list.toPandas(),
+                                            ancestors_df=ancestors_pd,
                                             num_profiles=hyper_n_profile_pop_size)
+
+
+
         profiles_pd = add_terms_to_profiles_pd(profiles=profiles_pd,
                                                all_hpo_terms=all_hpo_terms,
                                                ancestor_list=ancestor_list.toPandas(),
