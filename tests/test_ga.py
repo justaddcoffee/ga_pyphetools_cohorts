@@ -1,6 +1,6 @@
 import pandas as pd
 from unittest import TestCase
-from ga.ga import parse_phenopackets, run_genetic_algorithm, make_cohort
+from ga.ga import parse_phenopackets
 
 
 class TestGA(TestCase):
@@ -23,7 +23,7 @@ class TestGA(TestCase):
         self.assertTrue('PMID_20186813_6-year-old_male_patient' in p['phenotype_data']['Craniometaphyseal dysplasia'].keys())
         self.assertTrue('PMID_20186813_6-year-old_male_patient' == p['all_data']['Craniometaphyseal dysplasia'][0]['id'])
 
-        self.assertEquals(len(p['phenotype_data']['Craniometaphyseal dysplasia']['PMID_20186813_6-year-old_male_patient']), 7)
+        self.assertEqual(len(p['phenotype_data']['Craniometaphyseal dysplasia']['PMID_20186813_6-year-old_male_patient']), 7)
         self.assertCountEqual(p['phenotype_data']['Craniometaphyseal dysplasia']['PMID_20186813_6-year-old_male_patient'],
                           [ ('HP:0000407', 'Sensorineural hearing impairment', 'observed'),
                                     ('HP:0000572', 'Visual loss', 'observed'),
