@@ -33,6 +33,9 @@ if __name__ == '__main__':
     # download HPO graphq
     spo: list = make_hpo_closures()
 
+
+    pass
+
     # run genetic algorithm on each kfold split
     for i in range(num_splits):
         run_genetic_algorithm(

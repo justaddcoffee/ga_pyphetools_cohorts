@@ -11,6 +11,7 @@ import os
 import json
 import tempfile
 import wget
+from tqdm import tqdm
 
 
 def make_hpo_closures(
@@ -62,7 +63,9 @@ def make_hpo_closures(
 
     # Compute closures for each node
     closures = []
-    for node in pa_subgraph.nodes():
+    # set message for tqdm
+
+    for node in tqdm(pa_subgraph.nodes(), desc="Computing closures"):
         for anc in compute_closure(node):
             closures.append((node, anc))
 
@@ -241,23 +244,7 @@ def run_genetic_algorithm(
     # make ancestor_list
     ancestor_list = p.make_hpo_ancestor_list(hpo_edge_list_df=hpo_graph_df.dataframe())
 
-    # calculate all_hpo_terms from ancestor_list (unique values in first column)
-    all_hpo_terms = [i[0] for i in
-                     ancestor_list.select('hpo_term_id').dropDuplicates().collect()]
 
-    # calculate mica DF for these patients
-    mica_df = p.make_mica_df(hpo_graph=hpo_graph_df.dataframe(),
-                             hpo_df=patient_hpo_terms_and_labels.dataframe().withColumnRenamed(
-                                 'hpo_term_id', 'pt_hpo_term'),
-                             hpo_df_pt_or_disease_id_col=hpo_df_pt_or_disease_id_col,
-                             hpo_term_col='pt_hpo_term',
-                             hpo_graph_subject_col=hpo_graph_subject_col,
-                             hpo_graph_object_col=hpo_graph_object_col)
-
-    profiles = intialize_profiles(all_hpo_terms=all_hpo_terms,
-                                  ancestor_list=ancestor_list,
-                                  n_profiles=hyper_n_profile_pop_size,
-                                  hpo_terms_per_profile=hyper_n_initial_hpo_terms_per_profile)
 
     profiles_pd = profiles.toPandas()
     array_of_fitness_results = []

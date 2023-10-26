@@ -9,10 +9,12 @@ packages = [{include = "ga"}]
 [tool.poetry.dependencies]
 python = "^3.10"
 pandas = "^2"
-semsimian = "^0.2.8"
+semsimian = {git = "https://github.com/monarch-initiative/semsimian", rev = "search"}
 networkx = "^3.2"
 wget = "^3.2"
 scikit-learn = "^1.3.2"
+tqdm = "^4.66.1"
+
 
 [build-system]
 requires = ["poetry-core"]
