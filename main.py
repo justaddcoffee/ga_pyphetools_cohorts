@@ -40,6 +40,8 @@ if __name__ == '__main__':
     diseases_to_remove_from_negatives = ['Marfan lipodystrophy syndrome']
     phenopackets_store_gh_url = "https://github.com/monarch-initiative/phenopacket-store.git"
     num_kfold_splits = 5
+    include_self_in_closure = True
+    debug = False
 
     ################################################################
 
@@ -59,7 +61,8 @@ if __name__ == '__main__':
     # make "spo" (subject predicate object closures) for semsimian
     spo: list = make_hpo_closures(
         url=hpo_url,
-        root_node_to_use=hpo_root_node_to_use
+        root_node_to_use=hpo_root_node_to_use,
+        include_self_in_closure=include_self_in_closure,
     )
 
     # check how many pt HPO terms we have that aren't in the spo
@@ -90,9 +93,9 @@ if __name__ == '__main__':
     for i in range(num_kfold_splits):
         run_genetic_algorithm(
             semsimian=s,
-            spo=spo,
             pt_train_df=pt_test_train_df[i]['train'],
             pt_test_df=pt_test_train_df[i]['test'],
+            debug = debug
         )
 
     pass

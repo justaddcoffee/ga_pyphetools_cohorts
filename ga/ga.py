@@ -21,7 +21,8 @@ def make_hpo_closures(
         subject_prefixes= ['HP:'],
         object_prefixes= ['HP:'],
         predicates = ['biolink:subclass_of'],
-        root_node_to_use ='HP:0000118'
+        root_node_to_use ='HP:0000118',
+        include_self_in_closure=False,
     ) -> List[Tuple]:
     # get tmp file name
     tmpdir = tempfile.TemporaryDirectory()
@@ -67,6 +68,8 @@ def make_hpo_closures(
     # set message for tqdm
 
     for node in tqdm(pa_subgraph.nodes(), desc="Computing closures"):
+        if include_self_in_closure:
+            closures.append((node, 'dummy_predicate', node))
         for anc in compute_closure(node):
             closures.append((node, 'dummy_predicate', anc))
 
@@ -230,7 +233,8 @@ def initialize_profiles(all_hpo_terms: list,
 def compare_profiles_to_patients(
         semsimian,
         pt_train_df: pd.DataFrame,
-        profiles_pd: pd.DataFrame):
+        profiles_pd: pd.DataFrame,
+        debug=False):
     # Assuming pt_train_df and profiles_pd are your pandas DataFrames
 
     # Get unique person_ids and profile_ids
@@ -246,6 +250,28 @@ def compare_profiles_to_patients(
         this_profile = profiles_pd[profiles_pd['profile_id'] == profile_id]
         this_profile = this_profile[['hpo_term_id', 'weight', 'negated']]
         this_profile_tuples = list(this_profile.itertuples(index=False, name=None))
+
+        if debug:
+            print(f"Comparing {person_id} and {profile_id}")
+            print("Patient: " + "\n".join([str(t) for t in this_pt_tuples]))
+            print("\n")
+            print("Profile: " + "\n".join([str(t) for t in this_profile_tuples]))
+
+            # make some test data
+            pt_test_tuples = [('HP:0002650', 1.0, False),
+                                ('HP:0000098', 1.0, False),
+                                ('HP:0001166', 1.0, False),  # <-- this term causes a panic - remove this and it returns 0.0
+                                ('HP:0001083', 1.0, False),
+                                ('HP:0000545', 1.0, False),
+                                ('HP:0002616', 1.0, False)]
+            profile_test_tuples = [('HP:0033127', 0.7594267694796112, True),
+                                    ('HP:0033677', 0.2590903171508303, False),
+                                    ('HP:0010730', 0.7373312314046617, False),
+                                    ('HP:0005206', 0.16651076083997507, False),
+                                    ('HP:0033729', 0.30911732402073555, False)]
+            test_sim = semsimian.termset_pairwise_similarity_weighted_negated(
+                subject_dat=pt_test_tuples,
+                object_dat=profile_test_tuples)
 
         try:
             return semsimian.termset_pairwise_similarity_weighted_negated(
@@ -267,7 +293,6 @@ def compare_profiles_to_patients(
 
 def run_genetic_algorithm(
         semsimian,
-        spo: list[tuple],
         pt_train_df: pd.DataFrame,
         pt_test_df: pd.DataFrame,
 
@@ -281,6 +306,8 @@ def run_genetic_algorithm(
         hyper_remove_term_p=0.3,
         hyper_change_weight_p=0.3,
         hyper_change_weight_fraction=0.2,
+
+        debug=False,
     ):
 
     # overall strategy:
@@ -301,7 +328,7 @@ def run_genetic_algorithm(
     #             subject_dat=[(term1, 2, False)], object_dat=[(term2, 2, False)])
     #         print("sim between {} and {}: {}".format(term1, term2, sim))
 
-    all_hpo_terms = list(set([e[0] for e in spo]))
+    all_hpo_terms = list(set([e[0] for e in semsimian.get_spo()]))
 
     profiles_pd = initialize_profiles(all_hpo_terms=all_hpo_terms,
                                       n_profiles=hyper_n_profile_pop_size,
@@ -331,7 +358,10 @@ def run_genetic_algorithm(
         # run termset similarity for each profile vs each patient in train split
         sim_results = compare_profiles_to_patients(semsimian=semsimian,
                                                    pt_train_df=pt_train_df,
-                                                   profiles_pd=profiles_pd)
+                                                   profiles_pd=profiles_pd,
+                                                   debug=debug)
+
+        continue
 
         phenomizer_results_pd = phenomizer_results_pd.merge(patient_labels_train,
                                                             left_on='id1',
@@ -495,6 +525,7 @@ def add_terms_to_profiles_pd(profiles: pd.DataFrame,
                              ancestor_list: pd.DataFrame,
                              add_term_p: float = 0.1,
                              ) -> pd.DataFrame:
+    # TODO: REMEMBER TO PASS ARG FOR NEGATED TERMS AND NEGATE NEW TERMS WITH THAT FREQ
 
     def add_random_hpo_terms(df):
         # Remove ancestors of existing HPO terms from all_hpo_terms
