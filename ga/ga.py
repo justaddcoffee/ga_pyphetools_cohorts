@@ -3,7 +3,6 @@ import tarfile
 import networkx as nx
 from typing import List, Tuple
 
-from numpy import NaN
 from sklearn.model_selection import StratifiedKFold
 import pandas as pd
 from collections import defaultdict
@@ -250,14 +249,10 @@ def compare_profiles_to_patients(
         this_profile = this_profile[['hpo_term_id', 'weight', 'negated']]
         this_profile_tuples = list(this_profile.itertuples(index=False, name=None))
 
-        try:
-            return semsimian.termset_pairwise_similarity_weighted_negated(
-                subject_dat=this_pt_tuples,
-                object_dat=this_profile_tuples
-            )
-        except Exception as e:
-            print(f"Error comparing {person_id} and {profile_id}: {e}")
-            return NaN
+        return semsimian.termset_pairwise_similarity_weighted_negated(
+            subject_dat=this_pt_tuples,
+            object_dat=this_profile_tuples
+        )
 
     # Generate all combinations of person_ids and profile_ids
     combinations = list(itertools.product(person_ids, profile_ids))

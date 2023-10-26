@@ -23,7 +23,7 @@ def run_smoke_test():
     test_sim = s.termset_pairwise_similarity_weighted_negated(
         subject_dat=pt_test_tuples,
         object_dat=profile_test_tuples)
-    return sim
+    return test_sim
 
 
 if __name__ == '__main__':
