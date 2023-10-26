@@ -3,6 +3,7 @@ import tarfile
 import networkx as nx
 from typing import List, Tuple
 
+from sklearn.metrics import roc_auc_score, average_precision_score
 from sklearn.model_selection import StratifiedKFold
 import pandas as pd
 from collections import defaultdict
@@ -267,10 +268,9 @@ def run_genetic_algorithm(
         semsimian,
         pt_train_df: pd.DataFrame,
         pt_test_df: pd.DataFrame,
-
         hyper_n_iterations=60,
-        hyper_n_profile_pop_size=100,
-        hyper_n_initial_hpo_terms_per_profile=5,
+        hyper_n_profile_pop_size=30,  # TODO: change to 100 or so for real runs
+        hyper_n_initial_hpo_terms_per_profile=3,  # TODO: change to 5 or so for real runs
         hyper_n_fraction_negated_terms=0.1,
         hyper_n_best_profiles=20,
         hyper_fitness_auc='auprc',
@@ -307,7 +307,7 @@ def run_genetic_algorithm(
                                       fraction_negated_terms=hyper_n_fraction_negated_terms,
                                       hpo_terms_per_profile=hyper_n_initial_hpo_terms_per_profile)
 
-    array_of_fitness_results = []
+    fitness_by_iteration = []
 
     for i in tqdm(list(range(hyper_n_iterations)), desc="Running genetic algorithm"):
 
@@ -316,36 +316,22 @@ def run_genetic_algorithm(
                                                    pt_train_df=pt_train_df,
                                                    profiles_pd=profiles_pd,
                                                    debug=debug)
+        auc_results = make_auc_df(
+            sim_results=sim_results,
+            patient_labels=pt_train_df[['person_id', 'patient_label']].drop_duplicates()
+        )
+
+        # add results to fitness_by_iteration
+        new_row = auc_results.copy()
+        new_row['iteration'] = i
+        fitness_by_iteration += [new_row]
+
+        top_n_profiles = auc_results.sort_values(by=hyper_fitness_auc,
+                                                 ascending=False).head(hyper_n_best_profiles)['profile_id']
+
+        profiles_pd = profiles_pd[profiles_pd['profile_id'].isin(top_n_profiles)]
 
         continue
-
-        phenomizer_results_pd = phenomizer_results_pd.merge(patient_labels_train,
-                                                            left_on='id1',
-                                                            right_on='person_id',
-                                                            how='inner')
-
-        def calculate_auc_metrics(df):
-            profile_id = df['id2'].iloc[0]
-            y_true = df['label'].values
-            y_score = df['similarity'].values
-            auroc = roc_auc_score(y_true, y_score)
-            auprc = average_precision_score(y_true, y_score)
-            return pd.DataFrame([[profile_id, auroc, auprc]],
-                                columns=['profile_id', 'auroc', 'auprc'])
-
-
-        phenomizer_metrics_pd = phenomizer_results_pd.groupby('id2').apply(
-            calculate_auc_metrics)
-
-        # add results to array_of_fitness_results
-        new_row = phenomizer_metrics_pd
-        new_row['iteration'] = i
-        array_of_fitness_results += [new_row]
-
-        top_n_profiles = \
-        phenomizer_metrics_pd.sort_values(by=hyper_fitness_auc, ascending=False).head(
-            hyper_n_best_profiles)['profile_id'].to_list()
-        profiles_pd = profiles_pd[profiles_pd['profile_id'].isin(top_n_profiles)]
 
         profiles_pd = recombine_profiles_pd(profiles=profiles_pd,
                                             ancestors_df=ancestor_list.toPandas(),
@@ -373,17 +359,37 @@ def run_genetic_algorithm(
 
     phenomizer_metrics_pd = phenomizer_results_pd.groupby('id2').apply(calculate_auc_metrics)
 
-    # add results to array_of_fitness_results
+    # add results to fitness_by_iteration
     new_row = phenomizer_metrics_pd
     new_row['iteration'] = -999  # hack to mean performance on test data
-    array_of_fitness_results += [new_row]
+    fitness_by_iteration += [new_row]
 
-    # fitness_by_iteration = fitness_by_iteration.union(union_many(*array_of_fitness_results))
-    fitness_by_iteration_pd = pd.concat(array_of_fitness_results)
+    # fitness_by_iteration = fitness_by_iteration.union(union_many(*fitness_by_iteration))
+    fitness_by_iteration_pd = pd.concat(fitness_by_iteration)
     fitness_by_iteration = spark.createDataFrame(data=fitness_by_iteration_pd)
 
     output_profiles.write_dataframe(spark.createDataFrame(profiles_pd, schema=profile_schema))
     output_metrics.write_dataframe(fitness_by_iteration)
+
+
+def make_auc_df(
+        sim_results: pd.DataFrame,
+        patient_labels: pd.DataFrame
+) -> pd.DataFrame:
+
+    sim_results_with_labels = sim_results.merge(patient_labels, on='person_id', how='inner')
+
+    def calculate_auc_metrics(df):
+        profile_id = df['profile_id'].iloc[0]
+        y_true = df['patient_label'].values
+        y_score = df['similarity'].values
+        auroc = roc_auc_score(y_true, y_score)
+        auprc = average_precision_score(y_true, y_score)
+        return pd.DataFrame([[profile_id, auroc, auprc]],
+                            columns=['profile_id', 'auroc', 'auprc'])
+
+    return sim_results_with_labels.groupby('profile_id').apply(calculate_auc_metrics)
+
 
 def remove_terms_from_profiles(profiles: pd.DataFrame,
                                remove_term_p: float = 0.1) -> pd.DataFrame:

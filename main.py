@@ -41,6 +41,7 @@ if __name__ == '__main__':
     num_kfold_splits = 5
     include_self_in_closure = True
     debug = False
+    remove_pt_terms_not_in_spo = False
 
     ################################################################
 
@@ -78,8 +79,9 @@ if __name__ == '__main__':
                   f"These are possibly obsolete terms, or terms that are not in the induced subgraph of the `root_node_to_use` arg passed to make_hpo_closures(). "
                   f"These terms will have 0 semantic similarity to other terms, and may cause a semsimian panic")
     # get rid of these terms
-    warnings.warn(f"Removing {str(len(pt_hpo_terms_not_in_spo))} patient HPO terms that are not in the closures I'm using")
-    pt_df = pt_df[~pt_df['hpo_term_id'].isin(pt_hpo_terms_not_in_spo)]
+    if remove_pt_terms_not_in_spo:
+        warnings.warn(f"Removing {str(len(pt_hpo_terms_not_in_spo))} patient HPO terms that are not in the closures I'm using")
+        pt_df = pt_df[~pt_df['hpo_term_id'].isin(pt_hpo_terms_not_in_spo)]
 
     # test/train split
     pt_test_train_df = make_test_train_splits(pt_df=pt_df, num_splits=num_kfold_splits, seed=42)
