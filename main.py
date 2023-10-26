@@ -57,6 +57,8 @@ if __name__ == '__main__':
     negatives.sort()
     pt_df = make_cohort(data['phenotype_data'], disease, negatives)
     pt_df.rename(columns={'excluded': 'negated'}, inplace=True)
+    # all pt phenotypes are weighted equally
+    pt_df['weight'] = 1.0
 
     # make "spo" (subject predicate object closures) for semsimian
     spo: list = make_hpo_closures(

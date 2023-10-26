@@ -243,7 +243,6 @@ def compare_profiles_to_patients(
 
     def compare_person_and_profile(person_id, profile_id):
         this_pt = pt_train_df[pt_train_df['person_id'] == person_id]
-        this_pt.loc[:, 'weight'] = 1.0  # all patient phenotypes are weighted equally
         this_pt = this_pt[['hpo_term_id', 'weight', 'negated']]
         this_pt_tuples = list(this_pt.itertuples(index=False, name=None))
 
@@ -338,22 +337,6 @@ def run_genetic_algorithm(
     array_of_fitness_results = []
 
     for i in tqdm(list(range(hyper_n_iterations)), desc="Running genetic algorithm"):
-
-        # make tuples for one example patient
-        this_pt = pt_train_df[pt_train_df['person_id'] == 'PMID_12203992_B3']
-        this_pt.loc[:, 'weight'] = 1.0  # all patient phenotypes are weighted equally
-        this_pt = this_pt[['hpo_term_id', 'weight', 'negated']]
-        this_pt_tuples = list(this_pt.itertuples(index=False, name=None))
-
-        # make tuples for one profile
-        this_profile = profiles_pd[profiles_pd['profile_id'] == 0]
-        this_profile = this_profile[['hpo_term_id', 'weight', 'negated']]
-        this_profile_tuples = list(this_profile.itertuples(index=False, name=None))
-
-        semsimian.termset_pairwise_similarity_weighted_negated(
-            subject_dat=this_pt_tuples,
-            object_dat=this_profile_tuples
-        )
 
         # run termset similarity for each profile vs each patient in train split
         sim_results = compare_profiles_to_patients(semsimian=semsimian,
