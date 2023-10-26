@@ -7,6 +7,26 @@ from ga.ga import parse_phenopackets, run_genetic_algorithm, make_cohort, \
     make_test_train_splits, make_hpo_closures
 
 # Press the green button in the gutter to run the script.
+def run_smoke_test():
+    example_profile_tuples = [('HP:0001480', 0.9877573647870056, False),
+                              ('HP:0012092', 0.4428168573454814, False),
+                              ('HP:0032539', 0.19755265969899005, False),
+                              ('HP:0034253', 0.6673664558674761, False),
+                              ('HP:0001406', 0.9123756704460753, False)]
+
+    example_pt_tuples = [('HP:0002650', 1.0, False),
+                         ('HP:0000098', 1.0, False),
+                         ('HP:0001166', 1.0, False),
+                         ('HP:0001083', 1.0, False),
+                         ('HP:0000545', 1.0, False),
+                         ('HP:0002616', 1.0, False)]
+    # sim = s.termset_pairwise_similarity(profile_tuples=example_profile_tuples, pt_tuples=example_pt_tuples)
+    sim = s.termset_pairwise_similarity_weighted_negated(
+        subject_dat=example_profile_tuples,
+        object_dat=example_pt_tuples)
+    return sim
+
+
 if __name__ == '__main__':
     ################################################################
     # things we might want to change/set at runtime
@@ -27,13 +47,12 @@ if __name__ == '__main__':
     if not os.path.exists('phenopacket-store'):
         os.system(f"git clone {phenopackets_store_gh_url}")
 
+    # make cohort
     negatives = list(data['phenotype_data'].keys())
     negatives.remove(disease)
     for r in diseases_to_remove_from_negatives:
         negatives.remove(r)
     negatives.sort()
-
-    # make pandas dataframe
     pt_df = make_cohort(data['phenotype_data'], disease, negatives)
     pt_df.rename(columns={'excluded': 'negated'}, inplace=True)
 
@@ -62,6 +81,10 @@ if __name__ == '__main__':
     pt_test_train_df = make_test_train_splits(pt_df=pt_df, num_splits=num_kfold_splits, seed=42)
 
     s = Semsimian(spo=spo)
+
+    # this is giving sim of 0.0 which doesn't seem right
+    if run_smoke_test() == 0.0:
+        warnings.warn("!!!!!!!!!!!!!!!\nwhy is this similarity 0.0\n!!!!!!!!!!!!!!!!!!!!!!")
 
     # run genetic algorithm on each kfold split
     for i in range(num_kfold_splits):

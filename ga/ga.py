@@ -239,7 +239,7 @@ def compare_profiles_to_patients(
 
     def compare_person_and_profile(person_id, profile_id):
         this_pt = pt_train_df[pt_train_df['person_id'] == person_id]
-        this_pt['weight'] = 1  # all patient phenotypes are weighted equally
+        this_pt.loc[:, 'weight'] = 1.0  # all patient phenotypes are weighted equally
         this_pt = this_pt[['hpo_term_id', 'weight', 'negated']]
         this_pt_tuples = list(this_pt.itertuples(index=False, name=None))
 
@@ -314,7 +314,7 @@ def run_genetic_algorithm(
 
         # make tuples for one example patient
         this_pt = pt_train_df[pt_train_df['person_id'] == 'PMID_12203992_B3']
-        this_pt.loc[:, 'weight'] = 1  # all patient phenotypes are weighted equally
+        this_pt.loc[:, 'weight'] = 1.0  # all patient phenotypes are weighted equally
         this_pt = this_pt[['hpo_term_id', 'weight', 'negated']]
         this_pt_tuples = list(this_pt.itertuples(index=False, name=None))
 
