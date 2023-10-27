@@ -357,12 +357,14 @@ def run_genetic_algorithm(
             "Running genetic algorithm - {} for iteration {}: {}".format(
                 hyper_fitness_auc, i, round(auc_results[hyper_fitness_auc].mean(), 2)))
 
-        continue
-
         profiles_pd = add_terms_to_profiles_pd(profiles=profiles_pd,
                                                all_hpo_terms=all_hpo_terms,
                                                ancestor_list=ancestors_pd,
-                                               add_term_p=hyper_add_term_p)
+                                               add_term_p=hyper_add_term_p,
+                                               fraction_negated_terms=hyper_n_fraction_negated_terms)
+
+        continue
+
         profiles_pd = remove_terms_from_profiles_pd(profiles=profiles_pd,
                                                     remove_term_p=hyper_remove_term_p)
         # profiles = change_weights_for_profiles(profiles=profiles,
@@ -508,9 +510,9 @@ def add_terms_to_profiles(profiles: pd.DataFrame,
 def add_terms_to_profiles_pd(profiles: pd.DataFrame,
                              all_hpo_terms: list,
                              ancestor_list: pd.DataFrame,
+                             fraction_negated_terms,
                              add_term_p: float = 0.1,
                              ) -> pd.DataFrame:
-    # TODO: REMEMBER TO PASS ARG FOR NEGATED TERMS AND NEGATE NEW TERMS WITH THAT FREQ
 
     def add_random_hpo_terms(df):
         # Remove ancestors of existing HPO terms from all_hpo_terms
@@ -529,22 +531,24 @@ def add_terms_to_profiles_pd(profiles: pd.DataFrame,
             # Select a random HPO term and weight
             hpo_term = random.choice(possible_terms)
 
-            if hpo_term not in df['HPO_term'].unique():
-                weight = random.random()
-                # Create a new row with the random values
-                new_row = pd.DataFrame({"profile_id": [profile_id],
-                                        "HPO_term": [hpo_term],
-                                        "weight": [weight],
-                                        })
+            if hpo_term not in df['hpo_term_id'].unique():
+                new_row = {
+                    'profile_id': profile_id,
+                    'hpo_term_id': hpo_term,
+                    'weight': random.random(),
+                    'negated': True if random.random() < fraction_negated_terms else False,
+                    'ancestors': []  # None for ancestors column
+                }
+
                 # Append the new row to the DataFrame
-                df = df.append(new_row, ignore_index=True)
+                df.loc[max(list(df.index)) + 1] = new_row
+                pass
 
         df = df.drop('ancestors', axis=1)
         return df
 
     # add ancestor information
-    profiles = profiles.merge(ancestor_list, left_on='HPO_term', right_on='hpo_term_id', how='left')
-    profiles = profiles.drop('hpo_term_id', axis=1)
+    profiles = profiles.merge(ancestor_list, on='hpo_term_id', how='left')
 
     # Apply the add_random_hpo_terms function to each group
     profiles = profiles.groupby('profile_id').apply(add_random_hpo_terms)
@@ -558,7 +562,7 @@ def change_weights_for_profiles(profiles: pd.DataFrame,
                                 ) -> pd.DataFrame:
     check_schema(profiles=profiles)
 
-    # choose random number to decide remove existing term or not (10%?)
+    # choose random number to decide remove existing term or not
     # if yes, change weight
     def change_weight(weight):
         if random.random() < change_weight_p:
