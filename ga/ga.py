@@ -679,7 +679,7 @@ def recombine_profiles_pd(profiles: pd.DataFrame, ancestors_df: pd.DataFrame, nu
 
     # Loop through pairs of profiles, and apply the recombination logic to each pair
     new_profiles_to_add = []
-    for i, (profile1_id, profile2_id) in tqdm(enumerate(parent_profiles[['p1', 'p2']].values), desc="Recombining profiles"):
+    for i, (profile1_id, profile2_id) in enumerate(parent_profiles[['p1', 'p2']].values):
 
         profile1 = joined_profiles_df[joined_profiles_df.profile_id == profile1_id].reset_index(drop=True)
         profile2 = joined_profiles_df[joined_profiles_df.profile_id == profile2_id].reset_index(drop=True)
