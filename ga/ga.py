@@ -287,6 +287,7 @@ def run_genetic_algorithm(
         pt_train_df: pd.DataFrame,
         pt_test_df: pd.DataFrame,
         hyper_n_iterations=60,
+        hyper_pt_dropout_fraction=0.2,
         hyper_n_profile_pop_size=30,  # TODO: change to 100 or so for real runs
         hyper_n_initial_hpo_terms_per_profile=3,  # TODO: change to 5 or so for real runs
         hyper_n_fraction_negated_terms=0.1,
@@ -329,7 +330,8 @@ def run_genetic_algorithm(
 
         # run termset similarity for each profile vs each patient in train split
         sim_results = compare_profiles_to_patients(semsimian=semsimian,
-                                                   pt_train_df=pt_train_df,
+                                                   # apply dropout to pt_train_df:
+                                                   pt_train_df=pt_train_df[pt_train_df['person_id'].isin(pt_train_df['person_id'].sample(frac=hyper_pt_dropout_fraction))],
                                                    profiles_pd=profiles_pd,
                                                    debug=debug)
         auc_results = make_auc_df(
