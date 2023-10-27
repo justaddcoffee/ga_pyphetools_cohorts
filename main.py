@@ -4,7 +4,8 @@ from semsimian import Semsimian
 
 
 from ga.ga import parse_phenopackets, run_genetic_algorithm, make_cohort, \
-    make_test_train_splits, make_hpo_closures
+    make_test_train_splits, make_hpo_closures, make_hpo_labels_df
+
 
 # Press the green button in the gutter to run the script.
 def run_smoke_test():
@@ -40,8 +41,8 @@ if __name__ == '__main__':
     phenopackets_store_gh_url = "https://github.com/monarch-initiative/phenopacket-store.git"
     num_kfold_splits = 5
     include_self_in_closure = True
-    debug = False
     remove_pt_terms_not_in_spo = False
+    debug = True
 
     ################################################################
 
@@ -66,6 +67,8 @@ if __name__ == '__main__':
         root_node_to_use=hpo_root_node_to_use,
         include_self_in_closure=include_self_in_closure,
     )
+
+    node_labels = make_hpo_labels_df(url=hpo_url)
 
     # check how many pt HPO terms we have that aren't in the spo
     all_pt_hpo_terms = set(pt_df['hpo_term_id'].unique())
@@ -98,6 +101,7 @@ if __name__ == '__main__':
             semsimian=s,
             pt_train_df=pt_test_train_df[i]['train'],
             pt_test_df=pt_test_train_df[i]['test'],
+            node_labels=node_labels,
             debug = debug
         )
 

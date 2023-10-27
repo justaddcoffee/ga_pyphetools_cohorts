@@ -1,9 +1,8 @@
 import random
 import tarfile
-import warnings
-
+import numpy as np
 import networkx as nx
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 from sklearn.metrics import roc_auc_score, average_precision_score
 from sklearn.model_selection import StratifiedKFold
@@ -15,6 +14,36 @@ import tempfile
 import wget
 from tqdm import tqdm
 import itertools
+
+
+def make_hpo_labels_df(
+        url = 'https://kg-hub.berkeleybop.io/kg-obo/hp/2023-04-05/hp_kgx_tsv.tar.gz',
+        hp_prefix= ['HP:'],
+        cols_to_keep=['id', 'name', 'description'],
+        rename_id_col='hpo_term_id',
+    ) -> List[Tuple]:
+    # get tmp file name
+    tmpdir = tempfile.TemporaryDirectory()
+    tmpfile = tempfile.NamedTemporaryFile().file.name
+    wget.download(url, tmpfile)
+
+    this_tar = tarfile.open(tmpfile, 'r:gz')
+    this_tar.extractall(path=tmpdir.name)
+
+    # show files in tmpdir
+    node_files = [f for f in os.listdir(tmpdir.name) if 'nodes' in f]
+    if len(node_files) != 1:
+        raise RuntimeError("Didn't find exactly one edge file in {}".format(tmpdir.name))
+    node_file = node_files[0]
+
+    nodes_df = pd.read_csv(os.path.join(tmpdir.name, node_file), sep='\t')
+    # select only HP terms
+    nodes_df = nodes_df[nodes_df['id'].str.startswith(tuple(hp_prefix))]
+    # select only cols we want
+    nodes_df = nodes_df[cols_to_keep]
+    # rename id col
+    nodes_df.rename(columns={'id': rename_id_col}, inplace=True)
+    return nodes_df
 
 
 def make_hpo_closures(
@@ -286,7 +315,8 @@ def run_genetic_algorithm(
         semsimian,
         pt_train_df: pd.DataFrame,
         pt_test_df: pd.DataFrame,
-        hyper_n_iterations=60,
+        node_labels: Optional[pd.DataFrame] = None,
+        hyper_n_iterations=20,  # TODO: change to 60 or so for real runs
         hyper_pt_dropout_fraction=0.2,
         hyper_n_profile_pop_size=30,  # TODO: change to 100 or so for real runs
         hyper_n_initial_hpo_terms_per_profile=3,  # TODO: change to 5 or so for real runs
@@ -297,7 +327,6 @@ def run_genetic_algorithm(
         hyper_remove_term_p=0.3,
         hyper_change_weight_p=0.3,
         hyper_change_weight_fraction=0.2,
-
         debug=False,
     ):
 
@@ -349,6 +378,18 @@ def run_genetic_algorithm(
 
         profiles_pd = profiles_pd[profiles_pd['profile_id'].isin(top_n_profiles)]
 
+        # if debug, output best profile for each iteration
+        if debug:
+            # output info for top profile
+            pd.set_option('display.max_columns', None)  # pandas smdh
+            best = profiles_pd[profiles_pd['profile_id'].isin(top_n_profiles[:1])]
+            if node_labels is not None:
+                best = best.merge(node_labels, on="hpo_term_id")
+                print(best[['hpo_term_id', 'weight', 'negated', 'name']])
+            else:
+                print(best[['hpo_term_id', 'weight', 'negated']])
+
+
         profiles_pd = recombine_profiles_pd(profiles=profiles_pd,
                                             ancestors_df=ancestors_pd,
                                             num_profiles=hyper_n_profile_pop_size)
@@ -363,13 +404,16 @@ def run_genetic_algorithm(
                                                add_term_p=hyper_add_term_p,
                                                fraction_negated_terms=hyper_n_fraction_negated_terms)
 
-        continue
-
         profiles_pd = remove_terms_from_profiles_pd(profiles=profiles_pd,
                                                     remove_term_p=hyper_remove_term_p)
-        # profiles = change_weights_for_profiles(profiles=profiles,
-        #                                        change_weight_p=hyper_change_weight_p,
-        #                                        change_weight_fraction=hyper_change_weight_fraction)
+
+        profiles_pd = change_weights_for_profiles(profiles=profiles_pd,
+                                                  change_weight_p=hyper_change_weight_p,
+                                                  change_weight_fraction=hyper_change_weight_fraction)
+        continue
+
+
+    pass
 
     # Compute performance of last iteration of profiles on test data
     phenomizer_results = p.compare_two_dfs_similarity_long_spark_df(df1=test_split,
@@ -444,7 +488,6 @@ def remove_terms_from_profiles_pd(profiles: pd.DataFrame,
     profiles: A pandas dataframe describing profiles to evolve to predict an outcome
     remove_term_p: probability that a term will be removed
     """
-    check_schema(profiles=profiles)
 
     def drop_hpo_term(df):
         # Drop one HPO term with a probability of 0.1
@@ -560,8 +603,6 @@ def change_weights_for_profiles(profiles: pd.DataFrame,
                                 change_weight_p: float = 0.1,
                                 change_weight_fraction: float = 0.2
                                 ) -> pd.DataFrame:
-    check_schema(profiles=profiles)
-
     # choose random number to decide remove existing term or not
     # if yes, change weight
     def change_weight(weight):
@@ -574,9 +615,8 @@ def change_weights_for_profiles(profiles: pd.DataFrame,
         else:
             return weight
 
-    change_weight_udf = udf(change_weight, FloatType())
-
-    return profiles.withColumn("weight", change_weight_udf(F.col("weight")))
+    profiles['weight'] = profiles['weight'].apply(change_weight)
+    return profiles
 
 
 def run_phenomizer(profiles: pd.DataFrame,
