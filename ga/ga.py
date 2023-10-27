@@ -311,6 +311,15 @@ def make_ancestors_list(spo):
     return df
 
 
+def move_terms_on_hierarchy(profiles, move_term_p, ancestors_df):
+    if random.random() < move_term_p:
+        pass
+
+    profiles.reset_index(drop=True, inplace=False).groupby('profile_id').apply(
+        drop_hpo_term)
+    pass
+
+
 def run_genetic_algorithm(
         semsimian,
         pt_train_df: pd.DataFrame,
@@ -327,6 +336,7 @@ def run_genetic_algorithm(
         hyper_remove_term_p=0.3,
         hyper_change_weight_p=0.3,
         hyper_change_weight_fraction=0.2,
+        hyper_move_term_on_hierarchy_p=0.3,
         debug=False,
     ):
 
@@ -410,8 +420,13 @@ def run_genetic_algorithm(
         profiles_pd = change_weights_for_profiles(profiles=profiles_pd,
                                                   change_weight_p=hyper_change_weight_p,
                                                   change_weight_fraction=hyper_change_weight_fraction)
-        continue
 
+        profiles_pd = move_terms_on_hierarchy(profiles=profiles_pd,
+                                              move_term_p=hyper_move_term_on_hierarchy_p,
+                                              ancestors_df=ancestors_pd)
+
+        # increment progress bar
+        progress_bar.update(1)
 
     pass
 
@@ -460,27 +475,6 @@ def make_auc_df(
     return sim_results_with_labels.groupby('profile_id').apply(calculate_auc_metrics)
 
 
-def remove_terms_from_profiles(profiles: pd.DataFrame,
-                               remove_term_p: float = 0.1) -> pd.DataFrame:
-    """Randomly remove one term from a profile with a frequency of remove_term_p, IFF there
-    is more than 1 HPO term for the profile
-    profiles: A spark dataframe describing profiles to evolve to predict an outcome
-    remove_term_p: probability that a term will be removed
-    """
-    # choose random number to decide remove existing term or not (10%?)
-    # if yes, remove random term
-    check_schema(profiles=profiles)
-
-    @pandas_udf(profile_schema, PandasUDFType.GROUPED_MAP)
-    def drop_hpo_term(df):
-        # Drop one HPO term with a probability of 0.1
-        if len(df) > 1 and random.uniform(0, 1) < remove_term_p:
-            index_to_drop = np.random.randint(0, len(df))
-            df = df.drop(index_to_drop)
-        return df
-
-    return profiles.reset_index(drop = True, inplace = False).apply(drop_hpo_term)
-
 def remove_terms_from_profiles_pd(profiles: pd.DataFrame,
                                   remove_term_p: float = 0.1) -> pd.DataFrame:
     """Randomly remove one term from a profile with a frequency of remove_term_p, IFF there
@@ -496,58 +490,6 @@ def remove_terms_from_profiles_pd(profiles: pd.DataFrame,
         return df
     # df.index.name = None
     return profiles.reset_index(drop=True, inplace=False).groupby('profile_id').apply(drop_hpo_term)
-
-
-def add_terms_to_profiles(profiles: pd.DataFrame,
-                          all_hpo_terms: list,
-                          ancestor_list: pd.DataFrame,
-                          add_term_p: float = 0.1,
-                          ) -> pd.DataFrame:
-    check_schema(profiles=profiles)
-
-    # Define the Pandas UDF function
-    @pandas_udf(profile_schema, PandasUDFType.GROUPED_MAP)
-    def add_random_hpo_terms(df):
-        # Remove ancestors of existing HPO terms from all_hpo_terms
-        # here - this will help prevent incoherence in parent/children HPO terms
-
-        # get ancestors of all terms in this profile
-        # combine and explode ancestors
-        # make list of candidate HPO terms to add:
-        #    by subtracting out ancestors from all_hpo_terms
-        terms_to_eliminate = set(list(df.explode('ancestors')['ancestors'].unique()))
-        possible_terms = list(set(all_hpo_terms) - set(terms_to_eliminate))
-
-        profile_id = df['profile_id'].iloc[0]
-        # Check if we should add a new row
-        if random.random() < add_term_p:
-            # Select a random HPO term and weight
-            hpo_term = random.choice(possible_terms)
-
-            if hpo_term not in df['HPO_term'].unique():
-                weight = random.random()
-                # Create a new row with the random values
-                new_row = pd.DataFrame({"profile_id": [profile_id],
-                                        "HPO_term": [hpo_term],
-                                        "weight": [weight],
-                                        })
-                # Append the new row to the DataFrame
-                df = df.append(new_row, ignore_index=True)
-
-        df = df.drop('ancestors', axis=1)
-        return df
-
-    # add ancestor information
-    profiles = profiles.join(ancestor_list, (profiles.HPO_term == ancestor_list.hpo_term_id), how='left')
-    profiles = profiles.drop('hpo_term_id')
-
-    # for testing
-    # profiles.toPandas().groupby("profile_id").apply(add_random_hpo_terms)
-
-    # Apply the Pandas UDF function to the Spark DataFrame
-    profiles = profiles.groupby("profile_id").apply(add_random_hpo_terms)
-
-    return profiles
 
 
 def add_terms_to_profiles_pd(profiles: pd.DataFrame,
@@ -594,7 +536,7 @@ def add_terms_to_profiles_pd(profiles: pd.DataFrame,
     profiles = profiles.merge(ancestor_list, on='hpo_term_id', how='left')
 
     # Apply the add_random_hpo_terms function to each group
-    profiles = profiles.groupby('profile_id').apply(add_random_hpo_terms)
+    profiles = profiles.reset_index(drop=True, inplace=False).groupby('profile_id').apply(add_random_hpo_terms)
 
     return profiles
 
@@ -603,11 +545,11 @@ def change_weights_for_profiles(profiles: pd.DataFrame,
                                 change_weight_p: float = 0.1,
                                 change_weight_fraction: float = 0.2
                                 ) -> pd.DataFrame:
-    # choose random number to decide remove existing term or not
-    # if yes, change weight
+    """Randomly change the weight of each term with a frequency of change_weight_p, by
+    an amount equal to change_weight_fraction
+    """
     def change_weight(weight):
         if random.random() < change_weight_p:
-            #  TODO: make sure weight is never < 0 or > 1
             if random.random() < 0.5:
                 return min(1.0, weight * (1 + change_weight_fraction))
             else:
@@ -615,79 +557,9 @@ def change_weights_for_profiles(profiles: pd.DataFrame,
         else:
             return weight
 
-    profiles['weight'] = profiles['weight'].apply(change_weight)
+    profiles = profiles.reset_index(drop=True, inplace=False)
+    profiles['weight'] = (profiles['weight'].apply(change_weight))
     return profiles
-
-
-def run_phenomizer(profiles: pd.DataFrame,
-                   patient_data: pd.DataFrame,
-                   patient_labels: pd.DataFrame,
-                   mica_df: pd.DataFrame) -> pd.DataFrame:
-    """Given a set of profiles and patient data, run phenomizer on profiles vs patient data and return metrics on profiles (AUROC, AUPRC)
-    based on the performance of each profile in predicting label
-    profiles: a dataframe containing HPO terms for each profile
-    patient_data: a dataframe containing HPO terms for each patient
-    patient_labels: a dataframe indicating whether pt has the outcome of interest
-    mica_df: mica DF for the phenomizer comparison (i.e. output of make_mica_df() in semanticsimilarity package)
-    """
-
-    # TODO: I think we may want to resolve child/ancestors by only considering leaves in profiles
-
-    p = Phenomizer({})
-
-    phenomizer_results = p.compare_two_dfs_similarity_long_spark_df(df1=patient_data,
-                                                                    df1_id_col='person_id',
-                                                                    df1_hpo_term_col='hpo_id',
-                                                                    mica_df=mica_df,
-                                                                    df2=profiles,
-                                                                    df2_id_col='profile_id',
-                                                                    df2_hpo_term_col='HPO_term')
-
-    # #  +---+---+----------+
-    #  |id1|id2|similarity|
-    #  +---+---+----------+
-    #  |  1|  1|       0.0|
-    #  |  1|  2|0.88399124|
-    #  |  1|  3|       0.0|
-    #  |  1|  4|       0.0|
-    #  |  1|  5|       0.0|
-    #  |  1|  6|       0.0|
-
-    # join in labels: NB THIS WILL IGNORE PATIENTS WITHOUT LABELS BC OF INNER JOIN
-
-    phenomizer_results = \
-        phenomizer_results.join(patient_labels, (phenomizer_results.id1 == patient_labels.person_id), how='inner')
-
-    phenomizer_results = phenomizer_results.withColumn('similarity', F.col('similarity').cast('double'))
-
-    #
-    # calculate AUC
-    #
-
-    # make empty df
-    phenomizer_metrics_schema = StructType([
-        StructField("profile_id", IntegerType()),
-        StructField("auroc", DoubleType()),
-        StructField("auprc", DoubleType())
-    ])
-
-    @pandas_udf(phenomizer_metrics_schema, PandasUDFType.GROUPED_MAP)
-    def calculate_auc_metrics(df):
-        profile_id = df['id2'].iloc[0]
-        y_true = df['label'].values
-        y_score = df['similarity'].values
-        auroc = roc_auc_score(y_true, y_score)
-        auprc = average_precision_score(y_true, y_score)
-        return pd.DataFrame([[profile_id, auroc, auprc]], columns=['profile_id', 'auroc', 'auprc'])
-
-    phenomizer_metrics_df = phenomizer_results.groupBy('id2').apply(calculate_auc_metrics)
-
-    return phenomizer_metrics_df.toPandas()
-
-
-def check_schema(profiles, expected_cols=["profile_id", "HPO_term", "weight"]):
-    if set(profiles.columns) != set(expected_cols):
-        raise RuntimeError("Didn't get the expected columns {}", str(" ".join(expected_cols)))
 
 
 def recombine_profiles_pd(profiles: pd.DataFrame, ancestors_df: pd.DataFrame, num_profiles: int) -> pd.DataFrame:
@@ -780,29 +652,3 @@ def recombine_profiles_pd(profiles: pd.DataFrame, ancestors_df: pd.DataFrame, nu
     new_profiles = new_profiles.drop_duplicates()
 
     return new_profiles
-
-
-def extract_holdout(df_pts=None, holdouts=None, no_holdout=1, training=1, debug=False):
-    """
-        this function takes a VERTICAL patient dataframe (with 3 columns: person_id, HPO, label) and extracts the
-        train/test split for the no_holdout stratified holdout (10:90 test:train ratio)
-        Args:
-        df_pts: the VERTICAL patient dataframe
-        holdouts: the indicator dataframe where each column represents one holdout (1 = train/ 0 = test). This dataframe has columns:
-        - person_id: patient identifier
-        - label: the patient label
-        - holdout_x (x = 1:50): each entry in this column equals 1 (0) if the pt with the corresponding person_id is in
-        the training (test) set
-        NOTE: these holdouts are also used by RF here:https://unite.nih.gov/workspace/vector/view/ri.vector.main.workbook.ec226190-9c8a-4264-bb18-14459a0f6fef?branch=master
-        no_holdout: the holdout to extract (default = 1)
-        training: extract training (training = 1) or test (training = 0) split (default = training = 1)
-     example: if I want to extract the train-split from the third holdout then I can call
-     train_split = extract_holdout(complete_df, holdout_splts, no_holdout = 3, 1)
-    """
-    name_holdout_col = 'holdout_' + str(no_holdout)
-    holdout_splits = holdouts.select(*['person_id', name_holdout_col])
-
-    joined_df = df_pts.join(holdout_splits, on=["person_id"])
-    train_split = joined_df.filter(F.col(name_holdout_col) == training)
-    train_split = train_split.drop(name_holdout_col)
-    return train_split
