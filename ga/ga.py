@@ -311,13 +311,6 @@ def run_genetic_algorithm(
     #    f. change weights for profiles
     # 3. run termset similarity for each profile vs test split
 
-    # test some random similarities
-    # for term1 in random.sample(list(pt_train_df['hpo_term_id'].unique()), 10):
-    #     for term2 in random.sample(list(pt_train_df['hpo_term_id'].unique()), 10):
-    #         sim = semsimian.termset_pairwise_similarity_weighted_negated(
-    #             subject_dat=[(term1, 2, False)], object_dat=[(term2, 2, False)])
-    #         print("sim between {} and {}: {}".format(term1, term2, sim))
-
     all_hpo_terms = list(set([e[0] for e in semsimian.get_spo()]))
 
     # make ancestor pd df
@@ -330,7 +323,9 @@ def run_genetic_algorithm(
 
     fitness_by_iteration = []
 
-    for i in tqdm(list(range(hyper_n_iterations)), desc="Running genetic algorithm"):
+    progress_bar = tqdm(total=hyper_n_iterations, desc="Running genetic algorithm")
+
+    for i in list(range(hyper_n_iterations)):
 
         # run termset similarity for each profile vs each patient in train split
         sim_results = compare_profiles_to_patients(semsimian=semsimian,
@@ -355,13 +350,16 @@ def run_genetic_algorithm(
         profiles_pd = recombine_profiles_pd(profiles=profiles_pd,
                                             ancestors_df=ancestors_pd,
                                             num_profiles=hyper_n_profile_pop_size)
+
+        progress_bar.set_description(
+            "Running genetic algorithm - {} for iteration {}: {}".format(
+                hyper_fitness_auc, i, round(auc_results[hyper_fitness_auc].mean(), 2)))
+
         continue
-
-
 
         profiles_pd = add_terms_to_profiles_pd(profiles=profiles_pd,
                                                all_hpo_terms=all_hpo_terms,
-                                               ancestor_list=ancestor_list.toPandas(),
+                                               ancestor_list=ancestors_pd,
                                                add_term_p=hyper_add_term_p)
         profiles_pd = remove_terms_from_profiles_pd(profiles=profiles_pd,
                                                     remove_term_p=hyper_remove_term_p)
