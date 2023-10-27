@@ -5,6 +5,7 @@ from semsimian import Semsimian
 
 from ga.ga import parse_phenopackets, run_genetic_algorithm, make_cohort, \
     make_test_train_splits, make_hpo_closures, make_hpo_labels_df
+from tqdm import tqdm
 
 
 # Press the green button in the gutter to run the script.
@@ -96,15 +97,16 @@ if __name__ == '__main__':
         warnings.warn("!!!!!!!!!!!!!!!\nwhy is this similarity 0.0\n!!!!!!!!!!!!!!!!!!!!!!")
 
     # run genetic algorithm on each kfold split
-    for i in range(num_kfold_splits):
+    # for i in tqdm(range(num_kfold_splits), desc="kfold splits"):
+        i = 0
         run_genetic_algorithm(
             semsimian=s,
+            disease=disease,
             pt_train_df=pt_test_train_df[i]['train'],
             pt_test_df=pt_test_train_df[i]['test'],
             node_labels=node_labels,
             debug = debug
         )
 
-    pass
 
 

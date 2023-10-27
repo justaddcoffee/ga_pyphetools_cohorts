@@ -1,5 +1,7 @@
 import random
 import tarfile
+import warnings
+
 import numpy as np
 import networkx as nx
 from typing import List, Tuple, Optional
@@ -312,23 +314,45 @@ def make_ancestors_list(spo):
 
 
 def move_terms_on_hierarchy(profiles, move_term_p, ancestors_df):
-    if random.random() < move_term_p:
-        pass
+    """Randomly move a term on the hierarchy with a frequency of move_term_p
+    """
+    # TODO: this code causes a semsimian panic, likely due to a term being moved to a
+    # term that does not have an IC score
+    def move_term_on_hierarchy(term, ancestors_df=ancestors_df):
+        if random.random() < move_term_p:
+            if random.random() < 0.5:  # move up
+                # get ancestors of this term
+                if ancestors_df[ancestors_df['hpo_term_id'] == term] is not None:
+                    ancestors = ancestors_df[ancestors_df['hpo_term_id'] == term]['ancestors'].iloc[0]
+                    if len(ancestors) > 0:
+                        return random.choice(ancestors)
+                    else:
+                        return term
+                else:
+                    warnings.warn(f"Didn't find ancestors for {term}")
+                    return term
 
-    profiles.reset_index(drop=True, inplace=False).groupby('profile_id').apply(
-        drop_hpo_term)
-    pass
+            else:  # move down
+                if ancestors_df[ancestors_df['ancestors'].apply(lambda x: term in x)].shape[0] > 0:
+                    return random.choice(list(ancestors_df[ancestors_df['ancestors'].apply(lambda x: term in x)]['hpo_term_id']))
+        else:
+            return term
+
+    profiles.reset_index(drop=True, inplace=False)
+    profiles['hpo_term_id'] = profiles['hpo_term_id'].apply(move_term_on_hierarchy)
+    return profiles
 
 
 def run_genetic_algorithm(
         semsimian,
+        disease: str,
         pt_train_df: pd.DataFrame,
         pt_test_df: pd.DataFrame,
         node_labels: Optional[pd.DataFrame] = None,
-        hyper_n_iterations=20,  # TODO: change to 60 or so for real runs
+        hyper_n_iterations=60,
         hyper_pt_dropout_fraction=0.2,
-        hyper_n_profile_pop_size=30,  # TODO: change to 100 or so for real runs
-        hyper_n_initial_hpo_terms_per_profile=3,  # TODO: change to 5 or so for real runs
+        hyper_n_profile_pop_size=100,
+        hyper_n_initial_hpo_terms_per_profile=5,
         hyper_n_fraction_negated_terms=0.1,
         hyper_n_best_profiles=20,
         hyper_fitness_auc='auprc',
@@ -336,7 +360,7 @@ def run_genetic_algorithm(
         hyper_remove_term_p=0.3,
         hyper_change_weight_p=0.3,
         hyper_change_weight_fraction=0.2,
-        hyper_move_term_on_hierarchy_p=0.3,
+        hyper_move_term_on_hierarchy_p=0.1,
         debug=False,
     ):
 
@@ -373,18 +397,18 @@ def run_genetic_algorithm(
                                                    pt_train_df=pt_train_df[pt_train_df['person_id'].isin(pt_train_df['person_id'].sample(frac=hyper_pt_dropout_fraction))],
                                                    profiles_pd=profiles_pd,
                                                    debug=debug)
-        auc_results = make_auc_df(
+        train_auc_results = make_auc_df(
             sim_results=sim_results,
             patient_labels=pt_train_df[['person_id', 'patient_label']].drop_duplicates()
         )
 
         # add results to fitness_by_iteration
-        new_row = auc_results.copy()
+        new_row = train_auc_results.copy()
         new_row['iteration'] = i
         fitness_by_iteration += [new_row]
 
-        top_n_profiles = auc_results.sort_values(by=hyper_fitness_auc,
-                                                 ascending=False).head(hyper_n_best_profiles)['profile_id']
+        top_n_profiles = train_auc_results.sort_values(by=hyper_fitness_auc,
+                                                       ascending=False).head(hyper_n_best_profiles)['profile_id']
 
         profiles_pd = profiles_pd[profiles_pd['profile_id'].isin(top_n_profiles)]
 
@@ -406,7 +430,7 @@ def run_genetic_algorithm(
 
         progress_bar.set_description(
             "Running genetic algorithm - {} for iteration {}: {}".format(
-                hyper_fitness_auc, i, round(auc_results[hyper_fitness_auc].mean(), 2)))
+                hyper_fitness_auc, i+1, round(train_auc_results[hyper_fitness_auc].mean(), 2)))
 
         profiles_pd = add_terms_to_profiles_pd(profiles=profiles_pd,
                                                all_hpo_terms=all_hpo_terms,
@@ -421,39 +445,51 @@ def run_genetic_algorithm(
                                                   change_weight_p=hyper_change_weight_p,
                                                   change_weight_fraction=hyper_change_weight_fraction)
 
-        profiles_pd = move_terms_on_hierarchy(profiles=profiles_pd,
-                                              move_term_p=hyper_move_term_on_hierarchy_p,
-                                              ancestors_df=ancestors_pd)
+        # WIP:
+        # profiles_pd = move_terms_on_hierarchy(profiles=profiles_pd,
+        #                                       move_term_p=hyper_move_term_on_hierarchy_p,
+        #                                       ancestors_df=ancestors_pd)
 
         # increment progress bar
         progress_bar.update(1)
 
-    pass
+    progress_bar.close()
 
-    # Compute performance of last iteration of profiles on test data
-    phenomizer_results = p.compare_two_dfs_similarity_long_spark_df(df1=test_split,
-                                                                    df1_id_col='person_id',
-                                                                    df1_hpo_term_col='hpo_term_id',
-                                                                    mica_df=mica_df,
-                                                                    df2=spark.createDataFrame(profiles_pd, schema=profile_schema),
-                                                                    df2_id_col='profile_id',
-                                                                    df2_hpo_term_col='HPO_term')
-    phenomizer_results_pd = phenomizer_results.toPandas()
-    phenomizer_results_pd = phenomizer_results_pd.merge(patient_labels_test, left_on='id1', right_on='person_id', how='inner')
-
-    phenomizer_metrics_pd = phenomizer_results_pd.groupby('id2').apply(calculate_auc_metrics)
+    test_results = compare_profiles_to_patients(semsimian=semsimian,
+                                                pt_train_df=pt_test_df,
+                                                profiles_pd=profiles_pd,
+                                                debug=debug)
+    test_auc_results = make_auc_df(
+        sim_results=test_results,
+        patient_labels=pt_test_df[['person_id', 'patient_label']].drop_duplicates()
+    )
 
     # add results to fitness_by_iteration
-    new_row = phenomizer_metrics_pd
-    new_row['iteration'] = -999  # hack to mean performance on test data
+    new_row = test_auc_results.copy()
+    new_row['iteration'] = -999
     fitness_by_iteration += [new_row]
 
-    # fitness_by_iteration = fitness_by_iteration.union(union_many(*fitness_by_iteration))
-    fitness_by_iteration_pd = pd.concat(fitness_by_iteration)
-    fitness_by_iteration = spark.createDataFrame(data=fitness_by_iteration_pd)
+    # output average AUC in fitness_by_iteration by iteration
+    average_auc_by_iteration = pd.DataFrame(columns=['iteration', 'mean_auroc', 'mean_auprc'])
+    for i in range(len(fitness_by_iteration)):
+        average_auc_by_iteration.loc[i] = [i, fitness_by_iteration[i]['auroc'].mean(), fitness_by_iteration[i]['auprc'].mean()]
 
-    output_profiles.write_dataframe(spark.createDataFrame(profiles_pd, schema=profile_schema))
-    output_metrics.write_dataframe(fitness_by_iteration)
+    # output profiles_pd to a file
+    if node_labels is not None:
+        profiles_pd = profiles_pd.merge(node_labels, on="hpo_term_id", how='left')
+
+    # join in AUC results for each profile
+    profiles_pd.reset_index(drop=True, inplace=True)
+    test_auc_results.reset_index(drop=True, inplace=True)
+    profiles_pd = profiles_pd.merge(test_auc_results, on="profile_id", how='left')
+    profiles_pd.drop(['description'], axis=1, inplace=True)
+
+    # sort profiles by AUC
+    profiles_pd.sort_values(by=[hyper_fitness_auc, 'profile_id'], ascending=False, inplace=True)
+
+    # make outfile with all hyperparameters in its name
+    outfile = "ga_results_{}_{}_iterations".format(disease, hyper_n_iterations)
+    profiles_pd.to_csv(outfile + ".tsv", index=False, sep="\t")
 
 
 def make_auc_df(
