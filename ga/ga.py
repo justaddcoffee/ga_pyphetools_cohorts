@@ -693,8 +693,6 @@ def recombine_profiles_pd(profiles: pd.DataFrame, ancestors_df: pd.DataFrame, nu
 
         tmp_rows = []
         for _, row in profile1.iterrows():
-            # TODO: is not row['ancestors'] correct? Seems like a bug
-            warnings.warn("is not row['ancestors'] correct? Seems like a bug")
             if len(pd.isnull(row['ancestors'])) > 0 and not pd.isnull(row['hpo_term_id']) and random_hpo_term in row['ancestors']:
                 # This row['HPO_term'] is a descendant of random_hpo_term, do the swap
 
