@@ -352,11 +352,10 @@ def run_genetic_algorithm(
 
         profiles_pd = profiles_pd[profiles_pd['profile_id'].isin(top_n_profiles)]
 
-        continue
-
         profiles_pd = recombine_profiles_pd(profiles=profiles_pd,
                                             ancestors_df=ancestors_pd,
                                             num_profiles=hyper_n_profile_pop_size)
+        continue
 
 
 
@@ -666,18 +665,17 @@ def recombine_profiles_pd(profiles: pd.DataFrame, ancestors_df: pd.DataFrame, nu
     """
 
     # Join profiles with ancestors to get a DataFrame with profile_id, HPO_term, weight, and ancestors
-    joined_profiles_df = pd.merge(profiles, ancestors_df, left_on='HPO_term', right_on='hpo_term_id', how='left').drop('hpo_term_id', axis=1)
+    joined_profiles_df = pd.merge(profiles, ancestors_df, on='hpo_term_id', how='left')
 
-    from itertools import product
     all_pids = list(set(profiles['profile_id'].to_list()))
 
     # make random pairs of profile IDs (i.e. the parents)
-    parent_profiles = pd.DataFrame(list(product(all_pids, all_pids)), columns=['p1', 'p2'])
+    parent_profiles = pd.DataFrame(list(itertools.product(all_pids, all_pids)), columns=['p1', 'p2'])
     parent_profiles = parent_profiles.loc[parent_profiles['p1'] < parent_profiles['p2']].sample(n=num_profiles//2, replace=True)
 
     # Loop through pairs of profiles, and apply the recombination logic to each pair
     new_profiles_to_add = []
-    for i, (profile1_id, profile2_id) in enumerate(parent_profiles[['p1', 'p2']].values):
+    for i, (profile1_id, profile2_id) in tqdm(enumerate(parent_profiles[['p1', 'p2']].values), desc="Recombining profiles"):
 
         profile1 = joined_profiles_df[joined_profiles_df.profile_id == profile1_id].reset_index(drop=True)
         profile2 = joined_profiles_df[joined_profiles_df.profile_id == profile2_id].reset_index(drop=True)
@@ -695,40 +693,42 @@ def recombine_profiles_pd(profiles: pd.DataFrame, ancestors_df: pd.DataFrame, nu
 
         tmp_rows = []
         for _, row in profile1.iterrows():
-            if not row['ancestors'] and not pd.isnull(row['HPO_term']) and random_hpo_term in row['ancestors']:
+            # TODO: is not row['ancestors'] correct? Seems like a bug
+            warnings.warn("is not row['ancestors'] correct? Seems like a bug")
+            if len(pd.isnull(row['ancestors'])) > 0 and not pd.isnull(row['hpo_term_id']) and random_hpo_term in row['ancestors']:
                 # This row['HPO_term'] is a descendant of random_hpo_term, do the swap
 
                 # Create new row for profile2 with swapped HPO term
-                new_row = profile1.loc[profile1['HPO_term'] == row['HPO_term']].drop('profile_id', axis=1)
+                new_row = profile1.loc[profile1['hpo_term_id'] == row['hpo_term_id']].drop('profile_id', axis=1)
                 new_row['profile_id'] = new_profile2_id
                 tmp_rows.append(new_row)
 
                 # Filter out and keep 'good' HPO terms/weights from profile1
-                profile1 = profile1.loc[profile1['HPO_term'] != row['HPO_term']]
+                profile1 = profile1.loc[profile1['hpo_term_id'] != row['hpo_term_id']]
 
         rows_to_add_to_profile1 = []
         for _, row in profile2.iterrows():
-            if not row['ancestors'] and not pd.isnull(row['HPO_term']) and random_hpo_term in row['ancestors']:
+            if len(pd.isnull(row['ancestors'])) > 0 and not pd.isnull(row['hpo_term_id']) and random_hpo_term in row['ancestors']:
                 # This row['HPO_term'] is a descendant of random_hpo_term, do the swap
 
                 # Filter out and keep 'good' HPO terms/weights from profile2
-                profile2 = profile2.loc[profile2['HPO_term'] != row['HPO_term']]
+                profile2 = profile2.loc[profile2['hpo_term_id'] != row['hpo_term_id']]
 
                 # Add row to list of rows to add to profile1
-                rows_to_add_to_profile1.append(pd.DataFrame([[new_profile1_id, row['HPO_term'], row['weight']]], columns=profiles.columns))
+                rows_to_add_to_profile1.append(pd.DataFrame([[new_profile1_id, row['hpo_term_id'], row['weight']]], columns=profiles.columns))
 
         # Add rows to profile1
         if rows_to_add_to_profile1:
             rows_to_add_to_profile1 = pd.concat(rows_to_add_to_profile1, ignore_index=True)
             profile1 = pd.concat(rows_to_add_to_profile1)
         else:
-            profile1 = profile1[['profile_id', 'HPO_term', 'weight']]
+            profile1 = profile1[['profile_id', 'hpo_term_id', 'weight', 'negated']]
 
         # now complete swap by putting all tmp rows in profile2
         if tmp_rows:
             profile2 = pd.concat(tmp_rows)
         else:
-            profile2 = profile2[['profile_id', 'HPO_term', 'weight']]
+            profile2 = profile2[['profile_id', 'hpo_term_id', 'weight', 'negated']]
 
         new_profiles_to_add.append(profile1)
         new_profiles_to_add.append(profile2)
