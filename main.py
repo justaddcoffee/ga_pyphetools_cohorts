@@ -13,7 +13,7 @@ def run_smoke_test():
     # this termset sim seems to be 0.0, which seems fishy
     pt_test_tuples = [('HP:0002650', 1.0, False),
                       ('HP:0000098', 1.0, False),
-                      ('HP:0001166', 1.0, False), # <-- this term causes a panic - remove this and it returns 0.0
+                      ('HP:0001166', 1.0, False),
                       ('HP:0001083', 1.0, False),
                       ('HP:0000545', 1.0, False),
                       ('HP:0002616', 1.0, False)]
@@ -22,6 +22,11 @@ def run_smoke_test():
                            ('HP:0010730', 0.7373312314046617, False),
                            ('HP:0005206', 0.16651076083997507, False),
                            ('HP:0033729', 0.30911732402073555, False)]
+
+    # version of these variables with only the term
+    pt_test_terms = ['HP:0002650', 'HP:0000098', 'HP:0001166', 'HP:0001083', 'HP:0000545', 'HP:0002616']
+    profile_test_terms = ['HP:0033127', 'HP:0033677', 'HP:0010730', 'HP:0005206', 'HP:0033729']
+
     test_sim = s.termset_pairwise_similarity_weighted_negated(
         subject_dat=pt_test_tuples,
         object_dat=profile_test_tuples)
@@ -32,13 +37,30 @@ if __name__ == '__main__':
     ################################################################
     # things we might want to change/set at runtime
     ################################################################
-    phenopackets_path = 'phenopacket-store/phenopackets/'
+    phenopackets_path = os.path.join('phenopacket-store', 'phenopackets')
     data = parse_phenopackets(phenopackets_path)
     hpo_url = 'https://kg-hub.berkeleybop.io/kg-obo/hp/2023-04-05/hp_kgx_tsv.tar.gz'
     hpo_root_node_to_use = 'HP:0000001'
     # make a cohort to analyze
-    disease = 'Marfan syndrome'
-    diseases_to_remove_from_negatives = ['Marfan lipodystrophy syndrome']
+    disease = 'Coffin-Siris syndrome 3 '
+    diseases_to_remove_from_negatives =  ['Marfan lipodystrophy syndrome']
+        # 'Coffin-Siris syndrome 3 ',
+        # 'Rhabdoid tumor predisposition syndrome-1',
+        # 'severe intellectual disability and choroid plexus hyperplasia with resultant hydrocephalus',
+        # 'MANDIBULOACRAL DYSPLASIA WITH TYPE A LIPODYSTROPHY; MADA',
+        # 'HUTCHINSON-GILFORD PROGERIA SYNDROME; HGPS',
+        # 'EMERY-DREIFUSS MUSCULAR DYSTROPHY 3, AUTOSOMAL RECESSIVE; EDMD3',
+        # 'CARDIOMYOPATHY, DILATED, 1A; CMD1A', 'LIPODYSTROPHY, FAMILIAL PARTIAL, TYPE 2; FPLD2', 'Developmental and epileptic encephalopathy 28',
+        # 'Spinocerebellar ataxia, autosomal recessive 12', 'Joubert syndrome 10', 'Simpson-Golabi-Behmel syndrome, type 2', 'Orofaciodigital syndrome I',
+        # 'Houge-Janssen syndrome 2', 'Greig cephalopolysyndactyly syndrome', 'Polydactyly, postaxial, types A1 and B', 'Pallister-Hall syndrome',
+        # 'Luscan-Lumish syndrome', 'Rabin-Pappas syndrome', 'Intellectual developmental disorder, autosomal dominant 70', 'Cryohydrocytosis',
+        # 'Renal tubular acidosis, distal, with hemolytic anemia', 'Renal tubular acidosis, distal, autosomal dominant', 'Spherocytosis, type 4',
+        # 'Acromelic frontonasal dysostosis', 'Neurodevelopmental disorder with movement abnormalities, abnormal gait, and autistic features',
+        # 'Craniometaphyseal dysplasia', 'Chondrocalcinosis 2', 'Coffin-Siris syndrome 8', 'Marfan syndrome', 'Acromicric dysplasia', 'Marfan lipodystrophy syndrome',
+        # 'Ectopia lentis, familial', 'Stiff skin syndrome', 'Wolfram syndrome 1', 'Deafness, autosomal dominant 6', 'Albinism, oculocutaneous, type IV',
+        # 'ERI1-related disease', 'ZTTK SYNDROME', 'EHH1-related neurodevelopmental disorder', 'epilepsy', 'Atypical SCN2A-related disease',
+        # 'developmental and epileptic encephalopathy 11', 'seizures, benign familial infantile, 3', 'autism spectrum disorder', 'EHLERS-DANLOS SYNDROME, VASCULAR TYPE',
+        # 'Polymicrogyria with or without vascular-type EDS', 'NDD', 'West Syndrome', 'EOEE', 'Ohtahara Syndrome', 'Other DEE', 'Atypical Rett Syndrome']
     phenopackets_store_gh_url = "https://github.com/monarch-initiative/phenopacket-store.git"
     num_kfold_splits = 5
     include_self_in_closure = True
@@ -91,10 +113,6 @@ if __name__ == '__main__':
     pt_test_train_df = make_test_train_splits(pt_df=pt_df, num_splits=num_kfold_splits, seed=42)
 
     s = Semsimian(spo=spo)
-
-    # this is giving sim of 0.0 which doesn't seem right
-    if run_smoke_test() == 0.0:
-        warnings.warn("!!!!!!!!!!!!!!!\nwhy is this similarity 0.0\n!!!!!!!!!!!!!!!!!!!!!!")
 
     # run genetic algorithm on each kfold split
     # for i in tqdm(range(num_kfold_splits), desc="kfold splits"):
