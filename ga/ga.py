@@ -313,11 +313,9 @@ def make_ancestors_list(spo):
 
 
 def move_terms_on_hierarchy(profiles, move_term_p, hpo_graph, include_list=None, debug=False):
-    """Randomly move a term on the hierarchy with a frequency of move_term_p
+    """Randomly move a term to parent or child on the hierarchy with a frequency of
+    move_term_p
     """
-    # TODO: this code causes a semsimian panic, likely due to a term being moved to a
-    #  term that does not have an IC score
-
     def move_term_on_hierarchy(term,
                                include_list=include_list,
                                hpo_graph=hpo_graph,
