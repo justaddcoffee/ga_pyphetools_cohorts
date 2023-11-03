@@ -313,17 +313,28 @@ def make_ancestors_list(spo):
     return df
 
 
-def move_terms_on_hierarchy(profiles, move_term_p, ancestors_df):
+def move_terms_on_hierarchy(profiles, move_term_p, ancestors_df, spo):
     """Randomly move a term on the hierarchy with a frequency of move_term_p
     """
     # TODO: this code causes a semsimian panic, likely due to a term being moved to a
-    # term that does not have an IC score
-    def move_term_on_hierarchy(term, ancestors_df=ancestors_df):
+    #  term that does not have an IC score
+
+    include_list = None
+    if spo is not None:
+        include_list = [t[0] for t in spo]
+
+    def move_term_on_hierarchy(term,
+                               ancestors_df=ancestors_df,
+                               include_list=include_list):
         if random.random() < move_term_p:
             if random.random() < 0.5:  # move up
                 # get ancestors of this term
                 if ancestors_df[ancestors_df['hpo_term_id'] == term] is not None:
                     ancestors = ancestors_df[ancestors_df['hpo_term_id'] == term]['ancestors'].iloc[0]
+                    # remove ancestors that aren't in the spo
+                    if include_list is not None:
+                        ancestors = [a for a in ancestors if a in include_list]
+
                     if len(ancestors) > 0:
                         return random.choice(ancestors)
                     else:
@@ -333,8 +344,14 @@ def move_terms_on_hierarchy(profiles, move_term_p, ancestors_df):
                     return term
 
             else:  # move down
-                if ancestors_df[ancestors_df['ancestors'].apply(lambda x: term in x)].shape[0] > 0:
-                    return random.choice(list(ancestors_df[ancestors_df['ancestors'].apply(lambda x: term in x)]['hpo_term_id']))
+                df = ancestors_df[ancestors_df['ancestors'].apply(lambda x: term in x)]
+                # get rid of rows where 'hpo_term_id' is the original term
+                df = df[df['hpo_term_id'] != term]
+                if df.shape[0] > 0:
+                    new_term = random.choice(list(df['hpo_term_id']))
+                    return new_term
+                else:
+                    return term
         else:
             return term
 
@@ -412,16 +429,16 @@ def run_genetic_algorithm(
 
         profiles_pd = profiles_pd[profiles_pd['profile_id'].isin(top_n_profiles)]
 
-        # if debug, output best profile for each iteration
-        if debug:
-            # output info for top profile
-            pd.set_option('display.max_columns', None)  # pandas smdh
-            best = profiles_pd[profiles_pd['profile_id'].isin(top_n_profiles[:1])]
-            if node_labels is not None:
-                best = best.merge(node_labels, on="hpo_term_id")
-                print(best[['hpo_term_id', 'weight', 'negated', 'name']])
-            else:
-                print(best[['hpo_term_id', 'weight', 'negated']])
+        # output info for top profile
+        pd.set_option('display.max_columns', None)  # pandas smdh
+        best = profiles_pd[profiles_pd['profile_id'].isin(top_n_profiles[:1])]
+        # sort by weight
+        best = best.sort_values(by='weight', ascending=False, inplace=False)
+        if node_labels is not None:
+            best = best.merge(node_labels, on="hpo_term_id")
+            print(best[['hpo_term_id', 'weight', 'negated', 'name']])
+        else:
+            print(best[['hpo_term_id', 'weight', 'negated']])
 
 
         profiles_pd = recombine_profiles_pd(profiles=profiles_pd,
@@ -446,9 +463,10 @@ def run_genetic_algorithm(
                                                   change_weight_fraction=hyper_change_weight_fraction)
 
         # WIP:
-        # profiles_pd = move_terms_on_hierarchy(profiles=profiles_pd,
-        #                                       move_term_p=hyper_move_term_on_hierarchy_p,
-        #                                       ancestors_df=ancestors_pd)
+        profiles_pd = move_terms_on_hierarchy(profiles=profiles_pd,
+                                              move_term_p=hyper_move_term_on_hierarchy_p,
+                                              ancestors_df=ancestors_pd,
+                                              spo=semsimian.get_spo())
 
         # increment progress bar
         progress_bar.update(1)
