@@ -1,7 +1,6 @@
 import random
 import tarfile
 import warnings
-
 import numpy as np
 import networkx as nx
 from typing import List, Tuple, Optional
@@ -48,7 +47,7 @@ def make_hpo_labels_df(
     return nodes_df
 
 
-def make_hpo_closures(
+def make_hpo_closures_and_graph(
         url = 'https://kg-hub.berkeleybop.io/kg-obo/hp/2023-04-05/hp_kgx_tsv.tar.gz',
         pred_col='predicate',
         subject_prefixes= ['HP:'],
@@ -56,7 +55,7 @@ def make_hpo_closures(
         predicates = ['biolink:subclass_of'],
         root_node_to_use ='HP:0000118',
         include_self_in_closure=False,
-    ) -> List[Tuple]:
+    ) -> (List[Tuple], nx.DiGraph):
     # get tmp file name
     tmpdir = tempfile.TemporaryDirectory()
     tmpfile = tempfile.NamedTemporaryFile().file.name
@@ -106,7 +105,7 @@ def make_hpo_closures(
         for anc in compute_closure(node):
             closures.append((node, 'dummy_predicate', anc))
 
-    return closures
+    return closures, graph
 
 
 def make_test_train_splits(pt_df,
@@ -313,45 +312,30 @@ def make_ancestors_list(spo):
     return df
 
 
-def move_terms_on_hierarchy(profiles, move_term_p, ancestors_df, spo):
+def move_terms_on_hierarchy(profiles, move_term_p, hpo_graph, include_list=None, debug=False):
     """Randomly move a term on the hierarchy with a frequency of move_term_p
     """
     # TODO: this code causes a semsimian panic, likely due to a term being moved to a
     #  term that does not have an IC score
 
-    include_list = None
-    if spo is not None:
-        include_list = [t[0] for t in spo]
-
     def move_term_on_hierarchy(term,
-                               ancestors_df=ancestors_df,
-                               include_list=include_list):
+                               include_list=include_list,
+                               hpo_graph=hpo_graph,
+                               debug=debug):
         if random.random() < move_term_p:
             if random.random() < 0.5:  # move up
-                # get ancestors of this term
-                if ancestors_df[ancestors_df['hpo_term_id'] == term] is not None:
-                    ancestors = ancestors_df[ancestors_df['hpo_term_id'] == term]['ancestors'].iloc[0]
-                    # remove ancestors that aren't in the spo
-                    if include_list is not None:
-                        ancestors = [a for a in ancestors if a in include_list]
-
-                    if len(ancestors) > 0:
-                        return random.choice(ancestors)
-                    else:
-                        return term
-                else:
-                    warnings.warn(f"Didn't find ancestors for {term}")
-                    return term
-
+                candidate_terms = list(hpo_graph.predecessors(term))  # get parent(s)
             else:  # move down
-                df = ancestors_df[ancestors_df['ancestors'].apply(lambda x: term in x)]
-                # get rid of rows where 'hpo_term_id' is the original term
-                df = df[df['hpo_term_id'] != term]
-                if df.shape[0] > 0:
-                    new_term = random.choice(list(df['hpo_term_id']))
-                    return new_term
-                else:
-                    return term
+                candidate_terms = list(hpo_graph.successors(term))  # get children
+            # remove candidates that are not in the include_list
+            if include_list is not None:
+                candidate_terms = [a for a in candidate_terms if a in include_list]
+            if candidate_terms:
+                return random.choice(candidate_terms)
+            else:
+                if debug:
+                    warnings.warn(f"Didn't find any candidate parents or children for {term}")
+                return term
         else:
             return term
 
@@ -365,18 +349,19 @@ def run_genetic_algorithm(
         disease: str,
         pt_train_df: pd.DataFrame,
         pt_test_df: pd.DataFrame,
+        hpo_graph: nx.DiGraph,
         node_labels: Optional[pd.DataFrame] = None,
-        hyper_n_iterations=60,
+        hyper_n_iterations=200,
         hyper_pt_dropout_fraction=0.2,
         hyper_n_profile_pop_size=100,
         hyper_n_initial_hpo_terms_per_profile=5,
         hyper_n_fraction_negated_terms=0.1,
         hyper_n_best_profiles=20,
         hyper_fitness_auc='auprc',
-        hyper_add_term_p=0.3,
-        hyper_remove_term_p=0.3,
-        hyper_change_weight_p=0.3,
-        hyper_change_weight_fraction=0.2,
+        hyper_add_term_p=0.1,
+        hyper_remove_term_p=0.1,
+        hyper_change_weight_p=0.1,
+        hyper_change_weight_fraction=0.1,
         hyper_move_term_on_hierarchy_p=0.1,
         debug=False,
     ):
@@ -390,6 +375,7 @@ def run_genetic_algorithm(
     #    d. recombine profiles
     #    e. add/remove terms from profiles
     #    f. change weights for profiles
+    #    g. move terms on hierarchy to parent or child
     # 3. run termset similarity for each profile vs test split
 
     all_hpo_terms = list(set([e[0] for e in semsimian.get_spo()]))
@@ -440,7 +426,6 @@ def run_genetic_algorithm(
         else:
             print(best[['hpo_term_id', 'weight', 'negated']])
 
-
         profiles_pd = recombine_profiles_pd(profiles=profiles_pd,
                                             ancestors_df=ancestors_pd,
                                             num_profiles=hyper_n_profile_pop_size)
@@ -462,11 +447,15 @@ def run_genetic_algorithm(
                                                   change_weight_p=hyper_change_weight_p,
                                                   change_weight_fraction=hyper_change_weight_fraction)
 
-        # WIP:
         profiles_pd = move_terms_on_hierarchy(profiles=profiles_pd,
                                               move_term_p=hyper_move_term_on_hierarchy_p,
-                                              ancestors_df=ancestors_pd,
-                                              spo=semsimian.get_spo())
+                                              hpo_graph=hpo_graph,
+                                              # to make sure we don't move terms to
+                                              # terms that aren't an s in the spo
+                                              # to keep semsimian happy
+                                              include_list=[t[0] for t in
+                                                            semsimian.get_spo()],
+                                              debug=debug)
 
         # increment progress bar
         progress_bar.update(1)

@@ -1,10 +1,12 @@
 import os
 import warnings
+
+import networkx as nx
 from semsimian import Semsimian
 
 
 from ga.ga import parse_phenopackets, run_genetic_algorithm, make_cohort, \
-    make_test_train_splits, make_hpo_closures, make_hpo_labels_df
+    make_test_train_splits, make_hpo_closures_and_graph, make_hpo_labels_df
 from tqdm import tqdm
 
 
@@ -65,7 +67,7 @@ if __name__ == '__main__':
     num_kfold_splits = 5
     include_self_in_closure = True
     remove_pt_terms_not_in_spo = False
-    debug = True
+    debug = False
 
     ################################################################
 
@@ -84,8 +86,9 @@ if __name__ == '__main__':
     # all pt phenotypes are weighted equally
     pt_df['weight'] = 1.0
 
-    # make "spo" (subject predicate object closures) for semsimian
-    spo: list = make_hpo_closures(
+    # make "spo" (subject predicate object closures) for semsimian and also nx graph
+    # assign spo to first element of tuple, graph to second
+    spo, hpo_graph = make_hpo_closures_and_graph(
         url=hpo_url,
         root_node_to_use=hpo_root_node_to_use,
         include_self_in_closure=include_self_in_closure,
@@ -122,6 +125,7 @@ if __name__ == '__main__':
         disease=disease,
         pt_train_df=pt_test_train_df[i]['train'],
         pt_test_df=pt_test_train_df[i]['test'],
+        hpo_graph=hpo_graph,
         node_labels=node_labels,
         debug = debug
     )
