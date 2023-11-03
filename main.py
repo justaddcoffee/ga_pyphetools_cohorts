@@ -42,7 +42,7 @@ if __name__ == '__main__':
     hpo_url = 'https://kg-hub.berkeleybop.io/kg-obo/hp/2023-04-05/hp_kgx_tsv.tar.gz'
     hpo_root_node_to_use = 'HP:0000001'
     # make a cohort to analyze
-    disease = 'Coffin-Siris syndrome 3 '
+    disease = 'Marfan syndrome'
     diseases_to_remove_from_negatives =  ['Marfan lipodystrophy syndrome']
         # 'Coffin-Siris syndrome 3 ',
         # 'Rhabdoid tumor predisposition syndrome-1',
@@ -116,15 +116,15 @@ if __name__ == '__main__':
 
     # run genetic algorithm on each kfold split
     # for i in tqdm(range(num_kfold_splits), desc="kfold splits"):
-        i = 0
-        run_genetic_algorithm(
-            semsimian=s,
-            disease=disease,
-            pt_train_df=pt_test_train_df[i]['train'],
-            pt_test_df=pt_test_train_df[i]['test'],
-            node_labels=node_labels,
-            debug = debug
-        )
+    i = 0
+    run_genetic_algorithm(
+        semsimian=s,
+        disease=disease,
+        pt_train_df=pt_test_train_df[i]['train'],
+        pt_test_df=pt_test_train_df[i]['test'],
+        node_labels=node_labels,
+        debug = debug
+    )
 
 
 
