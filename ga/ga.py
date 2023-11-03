@@ -357,10 +357,10 @@ def run_genetic_algorithm(
         hyper_n_best_profiles=20,
         hyper_fitness_auc='auprc',
         hyper_add_term_p=0.1,
-        hyper_remove_term_p=0.1,
-        hyper_change_weight_p=0.1,
-        hyper_change_weight_fraction=0.1,
-        hyper_move_term_on_hierarchy_p=0.1,
+        hyper_remove_term_p=0.2,
+        hyper_change_weight_p=0.2,
+        hyper_change_weight_fraction=0.2,
+        hyper_move_term_on_hierarchy_p=0.3,
         debug=False,
     ):
 
