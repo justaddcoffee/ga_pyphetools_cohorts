@@ -358,8 +358,8 @@ def run_genetic_algorithm(
         hyper_fitness_auc='auprc',
         hyper_add_term_p=0.1,
         hyper_remove_term_p=0.2,
-        hyper_change_weight_p=0.2,
-        hyper_move_term_on_hierarchy_p=0.33,
+        hyper_change_weight_p=0.1,
+        hyper_move_term_on_hierarchy_p=0.2,
         debug=False,
     ):
 
@@ -559,7 +559,7 @@ def add_terms_to_profiles_pd(profiles: pd.DataFrame,
                 new_row = {
                     'profile_id': profile_id,
                     'hpo_term_id': hpo_term,
-                    'weight': random.random(),
+                    'weight': round(random.random(), 3),
                     'negated': True if random.random() < fraction_negated_terms else False,
                     'ancestors': []  # None for ancestors column
                 }
