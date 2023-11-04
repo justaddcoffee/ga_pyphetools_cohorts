@@ -258,7 +258,7 @@ def initialize_profiles(all_hpo_terms: list,
         for j in list(range(hpo_terms_per_profile)):
             hpo_term = random.choice(all_hpo_terms)
             negated = True if random.random() < fraction_negated_terms else False
-            new_profiles.append([i, hpo_term, random.random(), negated])
+            new_profiles.append([i, hpo_term, round(random.random(), 3), negated])
     return pd.DataFrame(new_profiles, columns=['profile_id', 'hpo_term_id', 'weight', 'negated'])
 
 
@@ -588,9 +588,9 @@ def change_weights_for_profiles(profiles: pd.DataFrame,
     def change_weight(weight):
         if random.random() < change_weight_p:
             if random.random() < 0.5:
-                return min(1.0, random.random())
+                return min(1.0, round(random.random(), 3))
             else:
-                return max(0.0, random.random())
+                return max(0.0, round(random.random(), 3))
         else:
             return weight
 
