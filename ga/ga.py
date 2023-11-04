@@ -359,7 +359,6 @@ def run_genetic_algorithm(
         hyper_add_term_p=0.1,
         hyper_remove_term_p=0.2,
         hyper_change_weight_p=0.2,
-        hyper_change_weight_fraction=0.2,
         hyper_move_term_on_hierarchy_p=0.33,
         debug=False,
     ):
@@ -442,8 +441,7 @@ def run_genetic_algorithm(
                                                     remove_term_p=hyper_remove_term_p)
 
         profiles_pd = change_weights_for_profiles(profiles=profiles_pd,
-                                                  change_weight_p=hyper_change_weight_p,
-                                                  change_weight_fraction=hyper_change_weight_fraction)
+                                                  change_weight_p=hyper_change_weight_p)
 
         profiles_pd = move_terms_on_hierarchy(profiles=profiles_pd,
                                               move_term_p=hyper_move_term_on_hierarchy_p,
@@ -583,18 +581,16 @@ def add_terms_to_profiles_pd(profiles: pd.DataFrame,
 
 
 def change_weights_for_profiles(profiles: pd.DataFrame,
-                                change_weight_p: float = 0.1,
-                                change_weight_fraction: float = 0.2
-                                ) -> pd.DataFrame:
+                                change_weight_p: float = 0.1) -> pd.DataFrame:
     """Randomly change the weight of each term with a frequency of change_weight_p, by
     an amount equal to change_weight_fraction
     """
     def change_weight(weight):
         if random.random() < change_weight_p:
             if random.random() < 0.5:
-                return min(1.0, weight + change_weight_fraction)
+                return min(1.0, random.random())
             else:
-                return max(0.0, weight - change_weight_fraction)
+                return max(0.0, random.random())
         else:
             return weight
 
