@@ -349,7 +349,7 @@ def run_genetic_algorithm(
         pt_test_df: pd.DataFrame,
         hpo_graph: nx.DiGraph,
         node_labels: Optional[pd.DataFrame] = None,
-        hyper_n_iterations=200,
+        hyper_n_iterations=100,
         hyper_pt_dropout_fraction=0.2,
         hyper_n_profile_pop_size=100,
         hyper_n_initial_hpo_terms_per_profile=5,
@@ -360,7 +360,7 @@ def run_genetic_algorithm(
         hyper_remove_term_p=0.2,
         hyper_change_weight_p=0.2,
         hyper_change_weight_fraction=0.2,
-        hyper_move_term_on_hierarchy_p=0.3,
+        hyper_move_term_on_hierarchy_p=0.33,
         debug=False,
     ):
 
@@ -592,9 +592,9 @@ def change_weights_for_profiles(profiles: pd.DataFrame,
     def change_weight(weight):
         if random.random() < change_weight_p:
             if random.random() < 0.5:
-                return min(1.0, weight * (1 + change_weight_fraction))
+                return min(1.0, weight + change_weight_fraction)
             else:
-                return max(0.0, weight * (1 - change_weight_fraction))
+                return max(0.0, weight - change_weight_fraction)
         else:
             return weight
 
@@ -670,7 +670,11 @@ def recombine_profiles_pd(profiles: pd.DataFrame, ancestors_df: pd.DataFrame, nu
                 profile2 = profile2.loc[profile2['hpo_term_id'] != row['hpo_term_id']]
 
                 # Add row to list of rows to add to profile1
-                rows_to_add_to_profile1.append(pd.DataFrame([[new_profile1_id, row['hpo_term_id'], row['weight']]], columns=profiles.columns))
+                try:
+                    rows_to_add_to_profile1.append(pd.DataFrame([[new_profile1_id, row['hpo_term_id'], row['weight']]], columns=profiles.columns))
+                # catch ValueError
+                except ValueError as ve:
+                    print("ValueError: {} while adding row['hpo_term_id'] {} and row['weight'] {} to profile1".format(ve, row['hpo_term_id'], row['weight']))
 
         # Add rows to profile1
         if rows_to_add_to_profile1:
