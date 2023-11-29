@@ -128,7 +128,7 @@ if __name__ == '__main__':
         hpo_graph=hpo_graph,
         node_labels=node_labels,
         hyper_initialize_and_add_terms_only_from_observed_terms=True,
-        debug = debug
+        debug=debug
     )
 
 
