@@ -127,6 +127,7 @@ if __name__ == '__main__':
         pt_test_df=pt_test_train_df[i]['test'],
         hpo_graph=hpo_graph,
         node_labels=node_labels,
+        hyper_initialize_and_add_terms_only_from_observed_terms=True,
         debug = debug
     )
 

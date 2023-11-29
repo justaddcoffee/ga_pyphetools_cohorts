@@ -357,6 +357,7 @@ def run_genetic_algorithm(
         hyper_n_best_profiles=20,
         hyper_fitness_auc='auprc',
         hyper_add_term_p=0.1,
+        hyper_initialize_and_add_terms_only_from_observed_terms=False,
         hyper_remove_term_p=0.2,
         hyper_change_weight_p=0.1,
         hyper_move_term_on_hierarchy_p=0.2,
@@ -375,7 +376,10 @@ def run_genetic_algorithm(
     #    g. move terms on hierarchy to parent or child
     # 3. run termset similarity for each profile vs test split
 
-    all_hpo_terms = list(set([e[0] for e in semsimian.get_spo()]))
+    if hyper_initialize_and_add_terms_only_from_observed_terms:
+        all_hpo_terms = list(pt_train_df['hpo_term_id'].unique())
+    else:
+        all_hpo_terms = list(set([e[0] for e in semsimian.get_spo()]))
 
     # make ancestor pd df
     ancestors_pd = make_ancestors_list(semsimian.get_spo())
@@ -488,7 +492,7 @@ def run_genetic_algorithm(
     profiles_pd.drop(['description'], axis=1, inplace=True)
 
     # sort profiles by AUC
-    profiles_pd.sort_values(by=[hyper_fitness_auc, 'profile_id'], ascending=False, inplace=True)
+    profiles_pd.sort_values(by=[hyper_fitness_auc, 'profile_id', 'weight'], ascending=False, inplace=True)
 
     # make outfile with all hyperparameters in its name
     outfile = "ga_results_{}_{}_iterations".format(disease, hyper_n_iterations)
@@ -690,6 +694,9 @@ def recombine_profiles_pd(profiles: pd.DataFrame, ancestors_df: pd.DataFrame, nu
 
     # Return the recombined profiles
     new_profiles = pd.concat(new_profiles_to_add, ignore_index=True)
-    new_profiles = new_profiles.drop_duplicates()
+    try:
+        new_profiles = new_profiles.drop_duplicates()
+    except TypeError as te:
+        pass
 
     return new_profiles
