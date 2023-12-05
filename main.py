@@ -121,7 +121,6 @@ if __name__ == '__main__':
     # for i in tqdm(range(num_kfold_splits), desc="kfold splits"):
     i = 0
     ga_results = run_genetic_algorithm(semsimian=s,
-                                       hyper_n_iterations=2,
                                        disease=disease,
                                        pt_train_df=pt_test_train_df[i]['train'],
                                        pt_test_df=pt_test_train_df[i]['test'],
