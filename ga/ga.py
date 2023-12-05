@@ -362,7 +362,7 @@ def run_genetic_algorithm(
         hyper_change_weight_p=0.1,
         hyper_move_term_on_hierarchy_p=0.2,
         debug=False,
-    ):
+    ) -> dict[str, pd.DataFrame]:
 
     # overall strategy:
     # 1. initialize profiles
@@ -497,6 +497,7 @@ def run_genetic_algorithm(
     # make outfile with all hyperparameters in its name
     outfile = "ga_results_{}_{}_iterations".format(disease, hyper_n_iterations)
     profiles_pd.to_csv(outfile + ".tsv", index=False, sep="\t")
+    return {'test_auc': test_auc_results, 'train_auc': train_auc_results}
 
 
 def make_auc_df(

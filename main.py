@@ -1,6 +1,6 @@
 import os
 import warnings
-
+import numpy as np
 import networkx as nx
 from semsimian import Semsimian
 
@@ -120,16 +120,17 @@ if __name__ == '__main__':
     # run genetic algorithm on each kfold split
     # for i in tqdm(range(num_kfold_splits), desc="kfold splits"):
     i = 0
-    run_genetic_algorithm(
-        semsimian=s,
-        disease=disease,
-        pt_train_df=pt_test_train_df[i]['train'],
-        pt_test_df=pt_test_train_df[i]['test'],
-        hpo_graph=hpo_graph,
-        node_labels=node_labels,
-        hyper_initialize_and_add_terms_only_from_observed_terms=True,
-        debug=debug
-    )
+    ga_results = run_genetic_algorithm(semsimian=s,
+                                       hyper_n_iterations=2,
+                                       disease=disease,
+                                       pt_train_df=pt_test_train_df[i]['train'],
+                                       pt_test_df=pt_test_train_df[i]['test'],
+                                       hpo_graph=hpo_graph,
+                                       node_labels=node_labels,
+                                       hyper_initialize_and_add_terms_only_from_observed_terms=True,
+                                       debug=debug)
+    max_profile_auprc = np.max(list(ga_results['train_auc']['auprc']))
+    print(f"the training AUPRC of the best profile is {max_profile_auprc}")
 
 
 
