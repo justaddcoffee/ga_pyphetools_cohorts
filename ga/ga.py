@@ -358,9 +358,9 @@ def run_genetic_algorithm(
         hyper_fitness_auc='auprc',
         hyper_add_term_p=0.1,
         hyper_initialize_and_add_terms_only_from_observed_terms=False,
-        hyper_remove_term_p=0.2,
+        hyper_remove_term_p=0.3,
         hyper_change_weight_p=0.1,
-        hyper_move_term_on_hierarchy_p=0.2,
+        hyper_move_term_on_hierarchy_p=0.5,
         debug=False,
     ) -> dict[str, pd.DataFrame]:
 
@@ -423,9 +423,9 @@ def run_genetic_algorithm(
         best = best.sort_values(by='weight', ascending=False, inplace=False)
         if node_labels is not None:
             best = best.merge(node_labels, on="hpo_term_id")
-            print(best[['hpo_term_id', 'weight', 'negated', 'name']])
+            print("\n" + str(best[['hpo_term_id', 'weight', 'negated', 'name']]))
         else:
-            print(best[['hpo_term_id', 'weight', 'negated']])
+            print("\n" + str(best[['hpo_term_id', 'weight', 'negated']]))
 
         profiles_pd = recombine_profiles_pd(profiles=profiles_pd,
                                             ancestors_df=ancestors_pd,
