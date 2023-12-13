@@ -282,6 +282,20 @@ def compare_profiles_to_patients(
         this_profile = this_profile[['hpo_term_id', 'weight', 'negated']]
         this_profile_tuples = list(this_profile.itertuples(index=False, name=None))
 
+        # from embiggen.similarities import DAGResnik
+        # from ensmallen.datasets.kgobo import HP
+        # hp = HP(directed=True)\
+        #     .filter_from_names(
+        #         edge_type_names_to_keep=["biolink:subclass_of"],
+        #         node_prefixes_to_keep=["HP:"]
+        # )\
+        #     .to_transposed()\
+        #     .remove_disconnected_nodes()
+        # hp.enable()
+        # hp_model = DAGResnik()
+        # hp_model.fit(hp, node_counts={node_name: 1
+        #                               for node_name in hp.get_node_names()})
+
         return semsimian.termset_pairwise_similarity_weighted_negated(
             subject_dat=this_pt_tuples,
             object_dat=this_profile_tuples
@@ -359,8 +373,8 @@ def run_genetic_algorithm(
         hyper_add_term_p=0.1,
         hyper_initialize_and_add_terms_only_from_observed_terms=False,
         hyper_remove_term_p=0.3,
-        hyper_change_weight_p=0.1,
-        hyper_move_term_on_hierarchy_p=0.5,
+        hyper_change_weight_p=0.5,
+        hyper_move_term_on_hierarchy_p=0.75,
         debug=False,
     ) -> dict[str, pd.DataFrame]:
 
@@ -551,7 +565,11 @@ def add_terms_to_profiles_pd(profiles: pd.DataFrame,
         # combine and explode ancestors
         # make list of candidate HPO terms to add:
         #    by subtracting out ancestors from all_hpo_terms
-        terms_to_eliminate = set(list(df.explode('ancestors')['ancestors'].unique()))
+        if 'ancestors' in df.columns:
+            terms_to_eliminate = set(list(df.explode('ancestors')['ancestors'].unique()))
+        else:
+            warnings.warn(f"Didn't find 'ancestors' column in df {' '.join(df.columns)} while adding random HPO term")
+            return df
         possible_terms = list(set(all_hpo_terms) - set(terms_to_eliminate))
 
         profile_id = df['profile_id'].iloc[0]
