@@ -1,7 +1,6 @@
 import os
 import warnings
-
-import networkx as nx
+import numpy as np
 from semsimian import Semsimian
 
 
@@ -68,6 +67,7 @@ if __name__ == '__main__':
     include_self_in_closure = True
     remove_pt_terms_not_in_spo = False
     debug = False
+    running_bayes_optimization = False
 
     ################################################################
 
@@ -116,20 +116,54 @@ if __name__ == '__main__':
     pt_test_train_df = make_test_train_splits(pt_df=pt_df, num_splits=num_kfold_splits, seed=42)
 
     s = Semsimian(spo=spo)
+    def run_genetic_algorithm_for_bayes_optimization(pt_test_train_df,
+                                                     hyper_add_term_p,
+                                                     hyper_remove_term_p,
+                                                     hyper_change_weight_p,
+                                                     hyper_move_term_on_hierarchy_p,
+                                                     ) -> float:
+        auprc_values = []
 
-    # run genetic algorithm on each kfold split
-    # for i in tqdm(range(num_kfold_splits), desc="kfold splits"):
-    i = 0
-    run_genetic_algorithm(
-        semsimian=s,
-        disease=disease,
-        pt_train_df=pt_test_train_df[i]['train'],
-        pt_test_df=pt_test_train_df[i]['test'],
-        hpo_graph=hpo_graph,
-        node_labels=node_labels,
-        hyper_initialize_and_add_terms_only_from_observed_terms=True,
-        debug=debug
-    )
+        # run genetic algorithm on each kfold split
+        for i in tqdm(range(num_kfold_splits), desc="kfold splits"):
+            ga_results = run_genetic_algorithm(semsimian=s,
+                                               disease=disease,
+                                               hyper_add_term_p=hyper_add_term_p,
+                                               hyper_remove_term_p=hyper_remove_term_p,
+                                               hyper_change_weight_p=hyper_change_weight_p,
+                                               hyper_move_term_on_hierarchy_p=hyper_move_term_on_hierarchy_p,
+                                               pt_train_df=pt_test_train_df[i]['train'],
+                                               pt_test_df=pt_test_train_df[i]['test'],
+                                               hpo_graph=hpo_graph,
+                                               node_labels=node_labels,
+                                               hyper_initialize_and_add_terms_only_from_observed_terms=True,
+                                               debug=debug)
+
+            max_profile_auprc = np.max(list(ga_results['train_auc']['auprc']))
+            auprc_values.append(max_profile_auprc)
+            print(f"the training AUPRC of the best profile is {max_profile_auprc}")
+
+        # return the mean AUPRC across all kfold splits
+        return np.mean(auprc_values)
+
+    if running_bayes_optimization:
+         bayes_opt_results = run_genetic_algorithm_for_bayes_optimization(pt_test_train_df)
+    else:
+        # run genetic algorithm on each kfold split
+        # for i in tqdm(range(num_kfold_splits), desc="kfold splits"):
+        i = 0
+        ga_results = run_genetic_algorithm(semsimian=s,
+                                           disease=disease,
+                                           pt_train_df=pt_test_train_df[i]['train'],
+                                           pt_test_df =pt_test_train_df[i]['test'],
+                                           hpo_graph = hpo_graph,
+                                           node_labels = node_labels,
+                                           hyper_initialize_and_add_terms_only_from_observed_terms = True,
+                                           debug = debug)
+        max_profile_auprc = np.max(list(ga_results['train_auc']['auprc']))
+        print(f"the training AUPRC of the best profile is {max_profile_auprc}")
+
+
 
 
 
