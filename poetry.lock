@@ -299,17 +299,46 @@ test = ["asv", "gmpy2", "mpmath", "pooch", "pytest", "pytest-cov", "pytest-timeo
 [[package]]
 name = "semsimian"
 version = "0.2.11"
-description = "Sematic similarity calculations for ontologies implemented in Rust."
+description = ""
 optional = false
 python-versions = ">=3.7"
-files = []
-develop = false
-
-[package.source]
-type = "git"
-url = "https://github.com/monarch-initiative/semsimian"
-reference = "main"
-resolved_reference = "367c3fd7719b6e70c08326865a8c00f6c66adc4d"
+files = [
+    {file = "semsimian-0.2.11-cp310-cp310-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:f9a5d1bef1049da4c046154b01d285e1f9a276f0cbca146432b026a1b91899cf"},
+    {file = "semsimian-0.2.11-cp310-cp310-macosx_10_12_x86_64.whl", hash = "sha256:df4045092780e33f5fe0387554f7b71d90fc0b509de78d80ebea1d0cffa4afbc"},
+    {file = "semsimian-0.2.11-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a5c2b2a64f794f492afa12d0ef9d0e448e3cef5263c08d30d1feea3eebd884a5"},
+    {file = "semsimian-0.2.11-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:dd3b379baef13060ac9ac1e44983b4c53cea3f4b2f79437375c504fd24b5d50d"},
+    {file = "semsimian-0.2.11-cp310-cp310-musllinux_1_2_aarch64.whl", hash = "sha256:7750a28895f38dadeb8c8a515864fbf8fa1608a311a756e91f5f91de91319dc1"},
+    {file = "semsimian-0.2.11-cp310-cp310-musllinux_1_2_x86_64.whl", hash = "sha256:f06a04a2344daaf462b18869b79abb013b32757fe9ce3cbf7181fd186b96dac1"},
+    {file = "semsimian-0.2.11-cp310-none-win_amd64.whl", hash = "sha256:0b4730995a0a65e82559beee77c3a97ddf9512f51a9f944305b31d04a7b082a2"},
+    {file = "semsimian-0.2.11-cp311-cp311-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:4f65162dae4e7db1af92b8413e3c7529975778a1d1edf3fbdba7bf23a13296e0"},
+    {file = "semsimian-0.2.11-cp311-cp311-macosx_10_12_x86_64.whl", hash = "sha256:3ec8ef9eed833bd343940b507022011c490be2e56eb5d2d438ccbdd106d740ce"},
+    {file = "semsimian-0.2.11-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:817cf085f7643fb95bc165e6f3f4354cbb75097927c038aa804852c004aa45fd"},
+    {file = "semsimian-0.2.11-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:961d1f72f8b0bf24376522ab72d47633ce1f1a46141b7048ab0c1eaedd58c8f6"},
+    {file = "semsimian-0.2.11-cp311-cp311-musllinux_1_2_aarch64.whl", hash = "sha256:2e13ec990b196ed3aafd6bd8abbf8ab704b2b189dcb10171259ec04bf4f0b261"},
+    {file = "semsimian-0.2.11-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:a45b5fbefa163f5bddecd599626f0a46eb2b78e1437da1e35f9dcc815f46dd14"},
+    {file = "semsimian-0.2.11-cp311-none-win_amd64.whl", hash = "sha256:df2fa4274fad81492aca0d6b1b5094b5d69f093d4c3b7e53a357ab35c19bc406"},
+    {file = "semsimian-0.2.11-cp37-cp37m-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:c7305a26eaf529e28565b09f730000a9a91b3da23939c05e557efdacff6634b1"},
+    {file = "semsimian-0.2.11-cp37-cp37m-macosx_10_12_x86_64.whl", hash = "sha256:96272b9ad6ff204cb4f1439b4e3602f926d344e09f578cebca40ff2d6cc7d114"},
+    {file = "semsimian-0.2.11-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:4e87de2dec9a1fd8a13bd8ccfb66067e6f11cae5c5b7ee6ecddc617688f843e3"},
+    {file = "semsimian-0.2.11-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:cf92cc1ad21fe7e2c9d047481790f2910c722f5f476694116f51b93d3ce60e8d"},
+    {file = "semsimian-0.2.11-cp37-cp37m-musllinux_1_2_aarch64.whl", hash = "sha256:f405baf1ecd2240b39fa325c57e4f87a9a1f43fac55a5850f307edc1c6f55647"},
+    {file = "semsimian-0.2.11-cp37-cp37m-musllinux_1_2_x86_64.whl", hash = "sha256:c5612ddbaa18a0d406944c08940d432e3c86b06292c20f3e81f5ef379e9ecab0"},
+    {file = "semsimian-0.2.11-cp37-none-win_amd64.whl", hash = "sha256:6686dcc0da6324e6bea07bc95d5448dd0820f0a64d3013c5e71325506be2cfe9"},
+    {file = "semsimian-0.2.11-cp38-cp38-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:dbfd1815e53835477344e4768a3caa14af01861d3618315d58feda2ce7520531"},
+    {file = "semsimian-0.2.11-cp38-cp38-macosx_10_12_x86_64.whl", hash = "sha256:709907e5136dfc41e0f2b7fc6374c89bf28952ffbac5f49b750957b39c8f06be"},
+    {file = "semsimian-0.2.11-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:d7512fc3b82865d7ce76d1aba53687e40dfa81e678d2e95f70f303cbcf0356fa"},
+    {file = "semsimian-0.2.11-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:57c8e49340b00cacc710b213b6a2d5f21bf24f8b64fc5bf1ed827db9726024dd"},
+    {file = "semsimian-0.2.11-cp38-cp38-musllinux_1_2_aarch64.whl", hash = "sha256:cdcf6144665c1519c63e4b47d3e4a2e25fe630286da44f421ee0d79ae2d85410"},
+    {file = "semsimian-0.2.11-cp38-cp38-musllinux_1_2_x86_64.whl", hash = "sha256:f822b8f2c91e5a5137fc14eab833fc427faeee2fd29272a544541296b7279c28"},
+    {file = "semsimian-0.2.11-cp38-none-win_amd64.whl", hash = "sha256:5fdf160c1808a533633c0d84aca52049e6f601bedb236c45582190da391d3ff0"},
+    {file = "semsimian-0.2.11-cp39-cp39-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:ab194191e0f8ba0e2e0eab694a2a6153d245945d90e1ff154056e5f80aea38f9"},
+    {file = "semsimian-0.2.11-cp39-cp39-macosx_10_12_x86_64.whl", hash = "sha256:5b0cf235e34e7f52c8eb0d545ef498bdd5185f6c137601e42ef7af0c6360a1c0"},
+    {file = "semsimian-0.2.11-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:bd4c7089334213ed5fd4bd67a0171757a7721b36047778d23147021f2e2c2436"},
+    {file = "semsimian-0.2.11-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:39bec78011ddb991d91296e3ba59b22d8e4d03d2a2a239e5d3c3b5f325da6297"},
+    {file = "semsimian-0.2.11-cp39-cp39-musllinux_1_2_aarch64.whl", hash = "sha256:61f82b9717cfe55be79bcd7dfd000700fde1a218e195d7c607710e18dcfefa4c"},
+    {file = "semsimian-0.2.11-cp39-cp39-musllinux_1_2_x86_64.whl", hash = "sha256:766fe01dae2278d2dd832dd25a48e595d0cf741ce32a3d0f4e6617007d6a586f"},
+    {file = "semsimian-0.2.11-cp39-none-win_amd64.whl", hash = "sha256:9b4cc029e1b353b4301d35d3fe449dc8ec214d8bd4f270ce83475933351438bc"},
+]
 
 [[package]]
 name = "six"
@@ -388,4 +417,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "044498d8676c969c0456d1f1713579dc33844ead6f5a509a473e36aa723c85ce"
+content-hash = "2f197aa914c209280aef36f62d51b398512425f7509c46b16603d7fc148d9199"
