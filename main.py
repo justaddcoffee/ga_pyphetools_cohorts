@@ -40,6 +40,7 @@ if __name__ == '__main__':
     # things we might want to change/set at runtime
     ################################################################
     phenopackets_path = os.path.join('phenopacket-store', 'phenopackets')
+    # phenopackets_path = 'test_ppk'
     data = parse_phenopackets(phenopackets_path)
     hpo_url = 'https://kg-hub.berkeleybop.io/kg-obo/hp/2023-04-05/hp_kgx_tsv.tar.gz'
     hpo_root_node_to_use = 'HP:0000001'

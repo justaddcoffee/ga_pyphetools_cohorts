@@ -235,7 +235,7 @@ def get_diseases(data) -> list:
     diseases = set()
     if 'diseases' in data:
         for d in data['diseases']:
-            if d['excluded'] is not True:
+            if not ('excluded' in d and d['excluded'] is True):
                 # add this disease to the set of diseases
                 diseases.add(d['term']['label'])
 
