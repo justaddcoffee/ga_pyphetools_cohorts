@@ -3,7 +3,10 @@ import pandas as pd
 from tqdm import tqdm
 from typing import Optional
 
-
+from ga.utils.ga import make_ancestors_list, initialize_profiles, \
+    compare_profiles_to_patients, make_auc_df, recombine_profiles_pd, \
+    add_terms_to_profiles_pd, remove_terms_from_profiles_pd, \
+    change_weights_for_profiles, move_terms_on_hierarchy
 
 
 def run_genetic_algorithm(

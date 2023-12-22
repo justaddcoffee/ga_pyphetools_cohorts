@@ -11,3 +11,20 @@ and the HPO terms for patients with the disease).
 We then take and mutate them (cross-over, add/delete terms, and mutate weights for each 
 term in the profile) to create a new generation of profiles. We repeat this process for 
 a number of generations.
+
+
+## Installation
+
+```shell
+git clone https://github.com/justaddcoffee/ga_pyphetools_cohorts.git
+cd ga_pyphetools_cohorts
+pip install poetry # if not already installed
+poetry install
+```
+
+## Usages
+
+```shell
+ga run -p /path/to/your/phenopackets/dir/
+```
+
