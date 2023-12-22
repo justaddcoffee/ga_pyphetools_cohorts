@@ -3,9 +3,9 @@ import warnings
 import click
 
 from semsimian import Semsimian
-
-from ga.ga import parse_phenopackets, run_genetic_algorithm, make_cohort, \
-    make_test_train_splits, make_hpo_closures_and_graph, make_hpo_labels_df
+#
+# from ga.ga import parse_phenopackets, run_genetic_algorithm, make_cohort, \
+#     make_test_train_splits, make_hpo_closures_and_graph, make_hpo_labels_df
 
 
 # main.add_command()
