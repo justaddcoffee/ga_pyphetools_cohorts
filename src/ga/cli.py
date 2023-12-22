@@ -1,7 +1,6 @@
 import os
 import warnings
 
-import networkx as nx
 from semsimian import Semsimian
 import click
 
@@ -11,44 +10,13 @@ from ga.ga import parse_phenopackets, run_genetic_algorithm, make_cohort, \
 from tqdm import tqdm
 
 
-# Press the green button in the gutter to run the script.
-def run_smoke_test():
-    # this termset sim seems to be 0.0, which seems fishy
-    pt_test_tuples = [('HP:0002650', 1.0, False),
-                      ('HP:0000098', 1.0, False),
-                      ('HP:0001166', 1.0, False),
-                      ('HP:0001083', 1.0, False),
-                      ('HP:0000545', 1.0, False),
-                      ('HP:0002616', 1.0, False)]
-    profile_test_tuples = [('HP:0033127', 0.7594267694796112, True),
-                           ('HP:0033677', 0.2590903171508303, False),
-                           ('HP:0010730', 0.7373312314046617, False),
-                           ('HP:0005206', 0.16651076083997507, False),
-                           ('HP:0033729', 0.30911732402073555, False)]
-
-    # version of these variables with only the term
-    pt_test_terms = ['HP:0002650', 'HP:0000098', 'HP:0001166', 'HP:0001083', 'HP:0000545', 'HP:0002616']
-    profile_test_terms = ['HP:0033127', 'HP:0033677', 'HP:0010730', 'HP:0005206', 'HP:0033729']
-
-    test_sim = s.termset_pairwise_similarity_weighted_negated(
-        subject_dat=pt_test_tuples,
-        object_dat=profile_test_tuples)
-    return test_sim
-
-
-@click.command()
-@click.option('--option1', default=1, help='Description for option1.')
-@click.option('--option2', default='value', help='Description for option2.')
-def main(option1, option2):
-    # Your code here
-    click.echo(f'Option 1: {option1}, Option 2: {option2}')
-
-
-if __name__ == '__main__':
+# main.add_command()
+if __name__ == "__main__":
     main()
 
 
-def main:
+@click.group()
+def main():
     ################################################################
     # things we might want to change/set at runtime
     ################################################################
@@ -147,3 +115,27 @@ def main:
 
 
 
+
+
+def run_smoke_test(s):
+    # this termset sim seems to be 0.0, which seems fishy
+    pt_test_tuples = [('HP:0002650', 1.0, False),
+                      ('HP:0000098', 1.0, False),
+                      ('HP:0001166', 1.0, False),
+                      ('HP:0001083', 1.0, False),
+                      ('HP:0000545', 1.0, False),
+                      ('HP:0002616', 1.0, False)]
+    profile_test_tuples = [('HP:0033127', 0.7594267694796112, True),
+                           ('HP:0033677', 0.2590903171508303, False),
+                           ('HP:0010730', 0.7373312314046617, False),
+                           ('HP:0005206', 0.16651076083997507, False),
+                           ('HP:0033729', 0.30911732402073555, False)]
+
+    # version of these variables with only the term
+    pt_test_terms = ['HP:0002650', 'HP:0000098', 'HP:0001166', 'HP:0001083', 'HP:0000545', 'HP:0002616']
+    profile_test_terms = ['HP:0033127', 'HP:0033677', 'HP:0010730', 'HP:0005206', 'HP:0033729']
+
+    test_sim = s.termset_pairwise_similarity_weighted_negated(
+        subject_dat=pt_test_tuples,
+        object_dat=profile_test_tuples)
+    return test_sim
