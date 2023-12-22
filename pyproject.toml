@@ -9,7 +9,7 @@ packages = [{include = "ga"}]
 [tool.poetry.dependencies]
 python = "^3.10"
 pandas = "^2"
-semsimian = {git = "https://github.com/monarch-initiative/semsimian", rev = "search"}
+semsimian = {git = "https://github.com/monarch-initiative/semsimian", rev = "main"}
 networkx = "^3.2"
 wget = "^3.2"
 scikit-learn = "^1.3.2"
