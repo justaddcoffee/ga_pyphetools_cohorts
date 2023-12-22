@@ -1,7 +1,6 @@
-import sys
-import os
 from unittest import TestCase
-from ga.ga import parse_phenopackets
+
+from ga.utils.phenopacket import parse_phenopackets
 
 
 class TestGA(TestCase):
