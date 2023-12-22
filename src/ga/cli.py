@@ -3,6 +3,7 @@ import warnings
 
 import networkx as nx
 from semsimian import Semsimian
+import click
 
 
 from ga.ga import parse_phenopackets, run_genetic_algorithm, make_cohort, \
@@ -35,7 +36,19 @@ def run_smoke_test():
     return test_sim
 
 
+@click.command()
+@click.option('--option1', default=1, help='Description for option1.')
+@click.option('--option2', default='value', help='Description for option2.')
+def main(option1, option2):
+    # Your code here
+    click.echo(f'Option 1: {option1}, Option 2: {option2}')
+
+
 if __name__ == '__main__':
+    main()
+
+
+def main:
     ################################################################
     # things we might want to change/set at runtime
     ################################################################
