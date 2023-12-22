@@ -15,9 +15,6 @@ from tqdm import tqdm
 import itertools
 
 
-
-
-
 def parse_phenopackets(directory_path) -> dict:
     json_files = []
     if not os.path.exists(directory_path):
