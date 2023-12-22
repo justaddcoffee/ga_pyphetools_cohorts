@@ -1,4 +1,6 @@
 import click
+
+from ga.cli_opt_hyper import optimize_hyperparameters_command
 from ga.cli_run import run_ga_command
 
 
@@ -8,6 +10,7 @@ def main():
 
 
 main.add_command(run_ga_command)
+main.add_command(optimize_hyperparameters_command)
 if __name__ == "__main__":
     main()
 
