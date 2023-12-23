@@ -1,6 +1,6 @@
-from collections import defaultdict
-import os
 import json
+import os
+from collections import defaultdict
 
 
 def parse_phenopackets(directory_path) -> dict:
@@ -9,13 +9,13 @@ def parse_phenopackets(directory_path) -> dict:
         raise RuntimeError("Didn't find directory {}".format(directory_path))
     for foldername, subfolders, filenames in os.walk(directory_path):
         for filename in filenames:
-            if filename.endswith('.json'):
+            if filename.endswith(".json"):
                 json_files.append(os.path.join(foldername, filename))
     parsed_full_phenopacket_data = defaultdict(list)
 
     for json_file in json_files:
         # Open and parse the JSON file
-        with (open(json_file, 'r') as file):
+        with open(json_file, "r") as file:
             try:
                 data = json.load(file)
 
@@ -31,8 +31,8 @@ def parse_phenopackets(directory_path) -> dict:
     parsed_phenotypes = extract_phenotypes(parsed_full_phenopacket_data)
 
     return {
-        'all_data': parsed_full_phenopacket_data,
-        'phenotype_data': parsed_phenotypes
+        "all_data": parsed_full_phenopacket_data,
+        "phenotype_data": parsed_phenotypes,
     }
 
 
@@ -41,28 +41,30 @@ def extract_phenotypes(full_data) -> dict:
     for disease, data in full_data.items():
         # this_pt_phenotypes = []
         for pt in data:
-            if 'phenotypicFeatures' in pt:
-                for p in pt['phenotypicFeatures']:
+            if "phenotypicFeatures" in pt:
+                for p in pt["phenotypicFeatures"]:
                     # add this phenotype to the set of phenotypes
-                    this_p = (p['type']['id'],
-                              p['type']['label'],
-                              'excluded' if 'excluded' in p else 'observed')
-                    if pt['id'] not in extracted_phenotypes[disease]:
-                        extracted_phenotypes[disease][pt['id']] = []
-                    extracted_phenotypes[disease][pt['id']].append(this_p)
+                    this_p = (
+                        p["type"]["id"],
+                        p["type"]["label"],
+                        "excluded" if "excluded" in p else "observed",
+                    )
+                    if pt["id"] not in extracted_phenotypes[disease]:
+                        extracted_phenotypes[disease][pt["id"]] = []
+                    extracted_phenotypes[disease][pt["id"]].append(this_p)
     return extracted_phenotypes
 
 
 def get_diseases(data) -> list:
     diseases = set()
-    if 'diseases' in data:
-        for d in data['diseases']:
-            if not ('excluded' in d and d['excluded'] is True):
+    if "diseases" in data:
+        for d in data["diseases"]:
+            if not ("excluded" in d and d["excluded"] is True):
                 # add this disease to the set of diseases
-                diseases.add(d['term']['label'])
+                diseases.add(d["term"]["label"])
 
-    if 'interpretations' in data:
-        for i in data['interpretations']:
-            diseases.add(i['diagnosis']['disease']['label'])
+    if "interpretations" in data:
+        for i in data["interpretations"]:
+            diseases.add(i["diagnosis"]["disease"]["label"])
 
     return list(diseases)
