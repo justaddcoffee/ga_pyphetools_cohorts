@@ -1,8 +1,8 @@
 import pandas as pd
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold, train_test_split
 
 
-def make_test_train_splits(
+def make_kfold_stratified_test_train_splits(
     pt_df,
     pt_id_col="person_id",
     pt_label_col="patient_label",
@@ -30,6 +30,27 @@ def make_test_train_splits(
             {"train": pt_df.iloc[train_index], "test": pt_df.iloc[test_index]}
         )
     return train_test_kfolds
+
+
+def make_test_train_split(
+    pt_df,
+    pt_id_col="person_id",
+    pt_label_col="patient_label",
+    shuffle=True,
+    seed=42,
+) -> dict:
+    # make a single test/train split
+    pt_id_df = pt_df[[pt_id_col, pt_label_col]].drop_duplicates()
+
+    train_pts, test_pts = train_test_split(
+        pt_id_df, stratify=pt_id_df[pt_label_col], shuffle=shuffle, random_state=seed
+    )
+
+    # merge back in the phenotypes
+    train = train_pts.drop(pt_label_col, axis=1).merge(pt_df, on=pt_id_col, how="left")
+    test = test_pts.drop(pt_label_col, axis=1).merge(pt_df, on=pt_id_col, how="left")
+
+    return {"train": train, "test": test}
 
 
 def make_cohort(
