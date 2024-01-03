@@ -1,4 +1,3 @@
-import os
 import warnings
 from pathlib import Path
 
@@ -29,52 +28,42 @@ from ga.utils.utils import run_genetic_algorithm
     show_default=True,
 )
 @click.option("--disease", "-d", required=True, help="Disease to analyze", type=str)
+@click.option(
+    "--diseases-to-remove-from-negatives",
+    "-r",
+    required=False,
+    help="Diseases to remove from negative phenotypes",
+    type=str,
+    multiple=True,
+    default=[],
+    show_default=True,
+)
 def run_ga_command(
     phenopacket_dir: Path,
     hpo_url: str,
     disease: str,
+    diseases_to_remove_from_negatives: list[str],
 ):
     data = parse_phenopackets(phenopacket_dir)
     hpo_root_node_to_use = "HP:0000001"
     # make a cohort to analyze
-    # disease = 'Marfan syndrome'
-    diseases_to_remove_from_negatives = ["Marfan lipodystrophy syndrome"]
-    # 'Coffin-Siris syndrome 3 ',
-    # 'Rhabdoid tumor predisposition syndrome-1',
-    # 'severe intellectual disability and choroid plexus hyperplasia with resultant hydrocephalus',
-    # 'MANDIBULOACRAL DYSPLASIA WITH TYPE A LIPODYSTROPHY; MADA',
-    # 'HUTCHINSON-GILFORD PROGERIA SYNDROME; HGPS',
-    # 'EMERY-DREIFUSS MUSCULAR DYSTROPHY 3, AUTOSOMAL RECESSIVE; EDMD3',
-    # 'CARDIOMYOPATHY, DILATED, 1A; CMD1A', 'LIPODYSTROPHY, FAMILIAL PARTIAL, TYPE 2; FPLD2', 'Developmental and epileptic encephalopathy 28',
-    # 'Spinocerebellar ataxia, autosomal recessive 12', 'Joubert syndrome 10', 'Simpson-Golabi-Behmel syndrome, type 2', 'Orofaciodigital syndrome I',
-    # 'Houge-Janssen syndrome 2', 'Greig cephalopolysyndactyly syndrome', 'Polydactyly, postaxial, types A1 and B', 'Pallister-Hall syndrome',
-    # 'Luscan-Lumish syndrome', 'Rabin-Pappas syndrome', 'Intellectual developmental disorder, autosomal dominant 70', 'Cryohydrocytosis',
-    # 'Renal tubular acidosis, distal, with hemolytic anemia', 'Renal tubular acidosis, distal, autosomal dominant', 'Spherocytosis, type 4',
-    # 'Acromelic frontonasal dysostosis', 'Neurodevelopmental disorder with movement abnormalities, abnormal gait, and autistic features',
-    # 'Craniometaphyseal dysplasia', 'Chondrocalcinosis 2', 'Coffin-Siris syndrome 8', 'Marfan syndrome', 'Acromicric dysplasia', 'Marfan lipodystrophy syndrome',
-    # 'Ectopia lentis, familial', 'Stiff skin syndrome', 'Wolfram syndrome 1', 'Deafness, autosomal dominant 6', 'Albinism, oculocutaneous, type IV',
-    # 'ERI1-related disease', 'ZTTK SYNDROME', 'EHH1-related neurodevelopmental disorder', 'epilepsy', 'Atypical SCN2A-related disease',
-    # 'developmental and epileptic encephalopathy 11', 'seizures, benign familial infantile, 3', 'autism spectrum disorder', 'EHLERS-DANLOS SYNDROME, VASCULAR TYPE',
-    # 'Polymicrogyria with or without vascular-type EDS', 'NDD', 'West Syndrome', 'EOEE', 'Ohtahara Syndrome', 'Other DEE', 'Atypical Rett Syndrome']
-    phenopackets_store_gh_url = (
-        "https://github.com/monarch-initiative/phenopacket-store.git"
-    )
-    num_kfold_splits = 5
+
+    num_kfold_splits = 2
     include_self_in_closure = True
     remove_pt_terms_not_in_spo = False
     debug = False
 
-    ################################################################
-
-    # get phenopacket data (can't add this repo as a dependency)
-    if not os.path.exists("phenopacket-store"):
-        os.system(f"git clone {phenopackets_store_gh_url}")
-
     # make cohort
     negatives = list(data["phenotype_data"].keys())
-    negatives.remove(disease)
+    if disease in negatives:
+        negatives.remove(disease)
     for r in diseases_to_remove_from_negatives:
-        negatives.remove(r)
+        if r in negatives:
+            negatives.remove(r)
+        else:
+            warnings.warn(
+                f"{r} is not in the negatives list, so I can't remove it from the negatives list"
+            )
     negatives.sort()
     pt_df = make_cohort(data["phenotype_data"], disease, negatives)
     pt_df.rename(columns={"excluded": "negated"}, inplace=True)
