@@ -25,6 +25,6 @@ poetry install
 ## Usages
 
 ```shell
-ga run -p /path/to/your/phenopackets/dir/
+ga run -p /path/to/your/phenopackets/dir/ -d "disease of interest"
 ```
 
