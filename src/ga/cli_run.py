@@ -38,14 +38,24 @@ from ga.utils.utils import run_genetic_algorithm
     default=[],
     show_default=True,
 )
+@click.option(
+    "--hpo-root-node-to-use",
+    "-r",
+    required=False,
+    help="HPO root node to use",
+    type=str,
+    default="HP:0000001",
+    show_default=True,
+)
 def run_ga_command(
     phenopacket_dir: Path,
     hpo_url: str,
     disease: str,
     diseases_to_remove_from_negatives: list[str],
+    hpo_root_node_to_use="HP:0000001"
 ):
     data = parse_phenopackets(phenopacket_dir)
-    hpo_root_node_to_use = "HP:0000001"
+
     # make a cohort to analyze
 
     num_kfold_splits = 2
