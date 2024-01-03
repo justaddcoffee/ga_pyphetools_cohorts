@@ -24,7 +24,12 @@ poetry install
 
 ## Usages
 
+### Run the genetic algorithm
 ```shell
 ga run -p /path/to/your/phenopackets/dir/ -d "disease of interest"
+```
+```shell
+# for example
+ga run -p tests/data/marfan_test_cohort/ -d "Marfan syndrome"
 ```
 
