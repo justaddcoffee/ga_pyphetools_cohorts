@@ -54,7 +54,7 @@ from ga.utils.utils import run_genetic_algorithm
     required=False,
     help="Remove patient HPO terms that are not in the closures we're using",
     type=bool,
-    default=False,
+    default=True,
     show_default=True,
 )
 @click.option(
@@ -72,7 +72,7 @@ def run_ga_command(
     disease: str,
     diseases_to_remove_from_negatives: list[str],
     hpo_root_node_to_use: str = "HP:0000001",
-    remove_pt_terms_not_in_spo: bool =True,
+    remove_pt_terms_not_in_spo: bool = True,
     debug: bool = False,
 ):
     data = parse_phenopackets(phenopacket_dir)
