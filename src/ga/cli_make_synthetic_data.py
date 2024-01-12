@@ -45,7 +45,7 @@ from pheval.prepare.custom_exceptions import MutuallyExclusiveOptionError
     required=True,
     help="Path to output directory.",
     type=Path,
-    default="phenopackets",
+    default="data/synthetic_phenopackets",
     show_default=True,
 )
 @click.command("make-synthetic-phenopackets")

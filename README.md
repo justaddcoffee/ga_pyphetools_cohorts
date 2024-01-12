@@ -24,12 +24,17 @@ poetry install
 
 ## Usages
 
+### Make phenopackets for a synthetic cohort
+```shell
+ga make-synthetic-phenopackets -o data/synthetic_phenopackets
+```
+
 ### Run the genetic algorithm
 ```shell
 ga run -p /path/to/your/phenopackets/dir/ -d "disease of interest"
 ```
 ```shell
 # for example
-ga run -p tests/data/marfan_test_cohort/ -d "Marfan syndrome"
+ga run -p data/synthetic_phenopackets -d "Marfan syndrome"
 ```
 
