@@ -120,8 +120,12 @@ def make_auc_df(
         profile_id = df["profile_id"].iloc[0]
         y_true = df["patient_label"].values
         y_score = df["similarity"].values
-        auroc = roc_auc_score(y_true, y_score)
-        auprc = average_precision_score(y_true, y_score)
+        try:
+            auroc = roc_auc_score(y_true, y_score)
+            auprc = average_precision_score(y_true, y_score)
+        except ValueError as ve:
+            warnings.warn(f"ValueError: {ve} while calculating AUC metrics")
+            pass
         return pd.DataFrame(
             [[profile_id, auroc, auprc]], columns=["profile_id", "auroc", "auprc"]
         )
