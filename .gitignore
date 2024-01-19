@@ -1,2 +1,5 @@
 phenopacket-store/
 __pycache__
+*.tsv
+output
+data/
