@@ -25,6 +25,13 @@ def make_phenopacket_store_data_command(
         output_dir: Path,
         phenopacket_store_url: str,
 ):
+    # see if output dir exists and is not empty
+    if output_dir.exists() and any(output_dir.iterdir()):
+        raise FileExistsError(
+            f"Output directory {output_dir} already exists and is not empty. "
+            f"Please delete or rename the directory and try again."
+        )
+
     """Clone phenopacket store, which contains lots of phenopackets
     """
     # make output dir if it doesn't exist

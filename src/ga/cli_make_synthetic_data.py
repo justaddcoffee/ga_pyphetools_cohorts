@@ -3,6 +3,7 @@ import urllib
 from pathlib import Path
 
 import click
+import tqdm
 from phenotype2phenopacket.create.create import create_synthetic_patient_phenopacket
 from phenotype2phenopacket.utils.utils import (
     filter_diseases,
@@ -59,11 +60,17 @@ def make_synthetic_data_command(
 ):
     """Create a set of synthetic patient phenopackets from a phenotype
     annotation file."""
+    # see if output dir exists and is not empty
+    if output_dir.exists() and any(output_dir.iterdir()):
+        raise FileExistsError(
+            f"Output directory {output_dir} already exists and is not empty. "
+            f"Please delete or rename the directory and try again."
+        )
+
+    output_dir.mkdir(exist_ok=True)
 
     if phenotype_annotation is None:
         phenotype_annotation = get_phenotype_annotation_file(phenotype_annotation_url)
-
-    output_dir.mkdir(exist_ok=True)
 
     phenotype_annotation_data = return_phenotype_annotation_data(phenotype_annotation)
     human_phenotype_ontology = load_ontology()
@@ -73,7 +80,7 @@ def make_synthetic_data_command(
     grouped_omim_diseases = filter_diseases(
         num_disease, omim_id, omim_id_list, phenotype_annotation_data
     )
-    for omim_disease in grouped_omim_diseases:
+    for omim_disease in tqdm.tqdm(grouped_omim_diseases, desc="Creating synthetic patient phenopackets"):
         create_synthetic_patient_phenopacket(
             human_phenotype_ontology,
             omim_disease,
