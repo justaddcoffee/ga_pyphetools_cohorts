@@ -22,19 +22,22 @@ pip install poetry # if not already installed
 poetry install
 ```
 
-## Usages
-
-### Make phenopackets for a synthetic cohort
-```shell
-ga make-synthetic-phenopackets -o data/synthetic_phenopackets
-```
+## Usage
 
 ### Run the genetic algorithm
 ```shell
 ga run -p /path/to/your/phenopackets/dir/ -d "disease of interest"
 ```
+
+### Working examples
+#### Make a synthetic cohort and run the genetic algorithm on it
 ```shell
-# for example
+ga make-synthetic-phenopackets -o data/synthetic_phenopackets
 ga run -p data/synthetic_phenopackets -d "Marfan syndrome"
 ```
 
+#### Get a real cohort from phenopacket store and run the genetic algorithm on it
+```shell
+ga make-phenopacket-store-data -o data/phenopacket_store_data
+ga run -p  data/phenopacket_store/notebooks/ -d "Marfan syndrome"
+```
