@@ -72,8 +72,8 @@ def run_genetic_algorithm(
         pt_train_df_1 = pt_train_df[pt_train_df['patient_label'] == 1]
         # Perform stratified sampling and concatenate the sampled dataframes
         pt_train_df_sampled = pd.concat(
-            [pt_train_df_0.sample(frac=hyper_pt_dropout_fraction),
-             pt_train_df_1.sample(frac=hyper_pt_dropout_fraction)])
+            [pt_train_df_0.sample(frac=1 - hyper_pt_dropout_fraction),
+             pt_train_df_1.sample(frac=1 - hyper_pt_dropout_fraction)])
 
         sim_results = compare_profiles_to_patients(
             semsimian=semsimian,
