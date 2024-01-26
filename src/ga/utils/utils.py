@@ -65,14 +65,19 @@ def run_genetic_algorithm(
 
     for i in list(range(hyper_n_iterations)):
         # run termset similarity for each profile vs each patient in train split
+
+        # Apply dropout to pt_train_df
+        # Separate the dataframe into two based on `patient_labels`
+        pt_train_df_0 = pt_train_df[pt_train_df['patient_label'] == 0]
+        pt_train_df_1 = pt_train_df[pt_train_df['patient_label'] == 1]
+        # Perform stratified sampling and concatenate the sampled dataframes
+        pt_train_df_sampled = pd.concat(
+            [pt_train_df_0.sample(frac=1 - hyper_pt_dropout_fraction),
+             pt_train_df_1.sample(frac=1 - hyper_pt_dropout_fraction)])
+
         sim_results = compare_profiles_to_patients(
             semsimian=semsimian,
-            # apply dropout to pt_train_df:
-            pt_train_df=pt_train_df[
-                pt_train_df["person_id"].isin(
-                    pt_train_df["person_id"].sample(frac=hyper_pt_dropout_fraction)
-                )
-            ],
+            pt_train_df=pt_train_df_sampled,
             profiles_pd=profiles_pd,
             debug=debug,
         )
