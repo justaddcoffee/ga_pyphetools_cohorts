@@ -49,9 +49,18 @@ from pheval.prepare.custom_exceptions import MutuallyExclusiveOptionError
     default="data/synthetic_phenopackets",
     show_default=True,
 )
+@click.option(
+    "--num-pt-per-disease",
+    "-p",
+    required=False,
+    help="Number of synthetic patient phenopackets to create for each disease.",
+    type=int,
+    default=10,
+)
 @click.command("make-synthetic-phenopackets")
 def make_synthetic_data_command(
         num_disease: int,
+        num_pt_per_disease: int,
         omim_id_list: Path,
         phenotype_annotation: Path,
         output_dir: Path = Path("data"),
@@ -80,14 +89,22 @@ def make_synthetic_data_command(
     grouped_omim_diseases = filter_diseases(
         num_disease, omim_id, omim_id_list, phenotype_annotation_data
     )
-    for omim_disease in tqdm.tqdm(grouped_omim_diseases, desc="Creating synthetic patient phenopackets"):
-        create_synthetic_patient_phenopacket(
-            human_phenotype_ontology,
-            omim_disease,
-            ontology_factory,
-            output_dir,
-            phenotype_annotation_data.version,
-        )
+    for omim_disease in tqdm.tqdm(grouped_omim_diseases,
+                                  desc="Creating synthetic patient phenopackets"):
+        # create num_pt_per_disease synthetic patient phenopackets for each disease
+        for i in range(num_pt_per_disease):
+            try:
+                create_synthetic_patient_phenopacket(
+                    human_phenotype_ontology=human_phenotype_ontology,
+                    omim_disease=omim_disease,
+                    ontology_factory=ontology_factory,
+                    output_dir=output_dir,
+                    pt_id=f"{omim_disease['database_id'][0]}_{omim_disease['disease_name'][0]}_{i+1}",
+                    hpoa_version=phenotype_annotation_data.version,
+                )
+            except TypeError as e:
+                print(e)
+                continue
 
 
 def get_phenotype_annotation_file(phenotype_annotation_url: str,
