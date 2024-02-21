@@ -27,7 +27,8 @@ def make_kfold_stratified_test_train_splits(
     ):
         # make a pandas df with train, another with test
         train_test_kfolds.append(
-            {"train": pt_df.iloc[train_index], "test": pt_df.iloc[test_index]}
+            {'train': pt_id_df.iloc[train_index].merge(pt_df, on=pt_id_col, how="left"),
+            'test': pt_id_df.iloc[test_index].merge(pt_df, on=pt_id_col, how="left")}
         )
     return train_test_kfolds
 
