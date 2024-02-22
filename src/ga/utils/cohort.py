@@ -1,3 +1,5 @@
+import warnings
+
 import pandas as pd
 from sklearn.model_selection import StratifiedKFold, train_test_split
 
@@ -60,13 +62,34 @@ def make_test_train_split(
     return {"train": train, "test": test}
 
 
-def make_cohort(
+def make_cohort_df(
     data,
     disease,
-    negatives,
+    diseases_to_remove_from_negatives=[],
     drop_duplicates_phenotypes=True,
-    expected_vals_for_excluded_col=["observed", "excluded"],
+    expected_vals_for_excluded_col=None,
 ) -> pd.DataFrame:
+    """Make a pandas dataframe with positive and negative cases for a disease
+    """
+
+    if disease not in data["by_disease"]:
+        raise RuntimeError(f"{disease} is not in the data")
+
+    if expected_vals_for_excluded_col is None:
+        expected_vals_for_excluded_col = ["observed", "excluded"]
+    negatives = list(data["by_disease"].keys())
+    if disease in negatives:
+        negatives.remove(disease)
+    for r in diseases_to_remove_from_negatives:
+        if r in negatives:
+            negatives.remove(r)
+        else:
+            warnings.warn(
+                f"{r} is not in the negatives list, so I can't remove it from the "
+                f"negatives list"
+            )
+
+    negatives.sort()
     # make a pandas dataframe with all disease cases as positive and negative cases as
     # negative
     these_columns = [
@@ -78,7 +101,7 @@ def make_cohort(
     ]
 
     # data looks like
-    # data['Marfan syndrome']['patient_id'] = [list of phenotypes]
+    # data['by_diseaese']['Marfan syndrome']['patient_id'] = [list of phenotypes]
 
     # phenotypes look like:
     # ('HP:0011968', 'Feeding difficulties', 'observed')
@@ -88,24 +111,38 @@ def make_cohort(
 
     # make positive cases
     pos_cases = []
-    for pt in data[disease]:
-        for phenotype in data[disease][pt]:
-            pos_cases.append([pt, phenotype[0], phenotype[1], phenotype[2], 1])
+    seen_pt_ids = set()
+    for pt in data['by_disease'][disease]:
+        this_pt_id = pt['subject']['id']
+        # check for duplicate patient ids
+        if this_pt_id in seen_pt_ids:
+            warnings.warn(f"Duplicate patient id: {this_pt_id}")
+        seen_pt_ids.add(this_pt_id)
+
+        for phenotype in pt['parsedPhenotypicFeatures']:
+            pos_cases.append([this_pt_id, phenotype[0], phenotype[1], phenotype[2], 1])
     pos_df = pd.DataFrame(pos_cases, columns=these_columns)
 
     # make negative cases
     neg_cases = []
     for disease in negatives:
-        for pt in data[disease]:
-            for phenotype in data[disease][pt]:
-                neg_cases.append([pt, phenotype[0], phenotype[1], phenotype[2], 0])
+        for pt in data['by_disease'][disease]:
+            this_pt_id = pt['subject']['id']
+
+            # check for duplicate patient ids
+            if this_pt_id in seen_pt_ids:
+                warnings.warn(f"Duplicate patient id: {this_pt_id}")
+            seen_pt_ids.add(this_pt_id)
+
+            for phenotype in pt['parsedPhenotypicFeatures']:
+                neg_cases.append([this_pt_id, phenotype[0], phenotype[1], phenotype[2], 0])
     neg_df = pd.DataFrame(neg_cases, columns=these_columns)
 
     pt_df = pd.concat([pos_df, neg_df], ignore_index=True)
 
-    if "excluded" not in pt_df.columns or set(list(pt_df["excluded"].unique())) != set(
-        expected_vals_for_excluded_col
-    ):
+    if ("excluded" not in pt_df.columns or
+            not set(list(pt_df["excluded"].unique()))
+                    .issubset(set(expected_vals_for_excluded_col))):
         raise RuntimeError(
             "Didn't get the expected values for the 'excluded' column: {}".format(
                 str(list(pt_df["excluded"].unique()))
@@ -121,5 +158,9 @@ def make_cohort(
         pt_df = pt_df.drop_duplicates(
             subset=["person_id", "hpo_term_id", "excluded", "patient_label"]
         )
+
+    pt_df.rename(columns={"excluded": "negated"}, inplace=True)
+    # all pt phenotypes are weighted equally
+    pt_df["weight"] = 1.0
 
     return pt_df
