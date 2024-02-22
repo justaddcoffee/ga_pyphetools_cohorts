@@ -1,0 +1,308 @@
+{
+  "id": "marfan_syndrome",
+  "subject": {
+    "id": "OMIM:154700_Marfan syndrome_7",
+    "timeAtLastEncounter": {
+      "age": {
+        "iso8601duration": "P21Y"
+      }
+    }
+  },
+  "phenotypicFeatures": [
+    {
+      "type": {
+        "id": "HP:0000276",
+        "label": "Long face"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0003302",
+        "label": "Spondylolisthesis"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0000541",
+        "label": "Retinal detachment"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0004927",
+        "label": "Pulmonary artery dilatation"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0000218",
+        "label": "High palate"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0001519",
+        "label": "Disproportionate tall stature"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0000767",
+        "label": "Pectus excavatum"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0002616",
+        "label": "Aortic root aneurysm"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0001704",
+        "label": "Tricuspid valve prolapse"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0001761",
+        "label": "Pes cavus"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0003199",
+        "label": "Decreased muscle mass"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0001653",
+        "label": "Mitral regurgitation"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0100775",
+        "label": "Dural ectasia"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0007676",
+        "label": "Hypoplasia of the iris"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0005136",
+        "label": "Mitral annular calcification"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0001635",
+        "label": "Congestive heart failure"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0000278",
+        "label": "Retrognathia"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0001840",
+        "label": "Metatarsus adductus"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0000189",
+        "label": "Narrow palate"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0001765",
+        "label": "Hammertoe"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0008132",
+        "label": "Medial rotation of the medial malleolus"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0000494",
+        "label": "Downslanted palpebral fissures"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0012454",
+        "label": "Unilateral wrist flexion contracture"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0001760",
+        "label": "Abnormal foot morphology"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0010674",
+        "label": "Abnormal curvature of the vertebral column"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0001760",
+        "label": "Abnormal foot morphology"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0032934",
+        "label": "Spontaneous cerebrospinal fluid leak"
+      },
+      "onset": {
+        "ontologyClass": {
+          "id": "HP:0011462",
+          "label": "Young adult onset"
+        }
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0001367",
+        "label": "Abnormal joint morphology"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0001384",
+        "label": "Abnormal hip joint morphology"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0004764",
+        "label": "Myxomatous mitral valve degeneration"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0000309",
+        "label": "Abnormal midface morphology"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0011842",
+        "label": "Abnormal skeletal morphology"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0001999",
+        "label": "Abnormal facial shape"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0001090",
+        "label": "Abnormally large globe"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0000098",
+        "label": "Tall stature"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0410219",
+        "label": "Hypoplasia of mandible relative to maxilla"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0031643",
+        "label": "Fusiform ascending tubular aorta aneurysm"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0001238",
+        "label": "Slender finger"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0000917",
+        "label": "Superior pectus carinatum"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0001382",
+        "label": "Joint hypermobility"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0011121",
+        "label": "Abnormal skin morphology"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0009124",
+        "label": "Abnormal adipose tissue morphology"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0034670",
+        "label": "Abnormal knee physiology"
+      }
+    }
+  ],
+  "diseases": [
+    {
+      "term": {
+        "id": "OMIM:154700",
+        "label": "Marfan syndrome"
+      }
+    }
+  ],
+  "metaData": {
+    "created": "2024-02-21T21:35:05.895843Z",
+    "createdBy": "phenotype2phenopacket",
+    "resources": [
+      {
+        "id": "hp",
+        "name": "human phenotype ontology",
+        "url": "http://purl.obolibrary.org/obo/hp.owl",
+        "version": "hp/releases/2024-01-11",
+        "namespacePrefix": "HP",
+        "iriPrefix": "http://purl.obolibrary.org/obo/HP_"
+      },
+      {
+        "id": "omim",
+        "name": "Online Mendelian Inheritance in Man",
+        "url": "https://www.omim.org",
+        "version": "hp/releases/2023-04-18",
+        "namespacePrefix": "OMIM",
+        "iriPrefix": "https://omim.org/entry/"
+      }
+    ],
+    "phenopacketSchemaVersion": "2.0"
+  }
+}
