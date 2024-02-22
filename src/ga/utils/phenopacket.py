@@ -19,6 +19,7 @@ def parse_phenopackets(directory_path) -> dict:
             try:
                 data = json.load(file)
 
+                data['parsedPhenotypicFeatures'] = extract_phenotypes(data)
                 # get diseases for this phenopacket
                 diseases = get_diseases(data)
                 for d in diseases:
@@ -27,31 +28,21 @@ def parse_phenopackets(directory_path) -> dict:
             except Exception as e:
                 print(f"Error parsing {json_file}: {e}")
 
-    # go through parsed_full_phenopacket_data and extract phenotypic features for each patient
-    parsed_phenotypes = extract_phenotypes(parsed_full_phenopacket_data)
-
-    return {
-        "all_data": parsed_full_phenopacket_data,
-        "phenotype_data": parsed_phenotypes,
-    }
+    return {"by_disease": parsed_full_phenopacket_data}
 
 
-def extract_phenotypes(full_data) -> dict:
-    extracted_phenotypes = defaultdict(dict)
-    for disease, data in full_data.items():
-        # this_pt_phenotypes = []
-        for pt in data:
-            if "phenotypicFeatures" in pt:
-                for p in pt["phenotypicFeatures"]:
-                    # add this phenotype to the set of phenotypes
-                    this_p = (
-                        p["type"]["id"],
-                        p["type"]["label"],
-                        "excluded" if "excluded" in p else "observed",
-                    )
-                    if pt["id"] not in extracted_phenotypes[disease]:
-                        extracted_phenotypes[disease][pt["id"]] = []
-                    extracted_phenotypes[disease][pt["id"]].append(this_p)
+def extract_phenotypes(data) -> list:
+    extracted_phenotypes = []
+
+    if "phenotypicFeatures" in data:
+        for p in data["phenotypicFeatures"]:
+            # add this phenotype to the set of phenotypes
+            this_p = (
+                p["type"]["id"],
+                p["type"]["label"],
+                "excluded" if "excluded" in p['type'] else "observed",
+            )
+            extracted_phenotypes.append(this_p)
     return extracted_phenotypes
 
 
