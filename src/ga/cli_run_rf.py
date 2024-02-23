@@ -4,7 +4,7 @@ from pathlib import Path
 import click
 from semsimian import Semsimian
 
-from ga.utils.cohort import make_cohort, make_kfold_stratified_test_train_splits, \
+from ga.utils.cohort import make_cohort_df, make_kfold_stratified_test_train_splits, \
     make_test_train_split
 from ga.utils.hpo import make_hpo_closures_and_graph, make_hpo_labels_df
 from ga.utils.phenopacket import parse_phenopackets

@@ -5,9 +5,6 @@ from ga.cli_make_synthetic_data import make_synthetic_data_command
 from ga.cli_make_phenopacket_store_data import make_phenopacket_store_data_command
 from ga.cli_run import run_ga_command
 from ga.cli_run_all import run_all_command
-from ga.cli_run_rf import run_rf_command
-from ga.cli_run_lr import run_lr_command
-from ga.cli_run_dt import run_dt_command
 
 
 @click.group()
