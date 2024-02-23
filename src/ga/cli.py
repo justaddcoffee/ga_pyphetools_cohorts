@@ -14,9 +14,6 @@ def main():
 
 main.add_command(run_ga_command)
 main.add_command(run_all_command)
-#main.add_command(run_rf_command)
-#main.add_command(run_lr_command)
-#main.add_command(run_dt_command)
 main.add_command(optimize_hyperparameters_command)
 main.add_command(make_synthetic_data_command)
 main.add_command(make_phenopacket_store_data_command)
