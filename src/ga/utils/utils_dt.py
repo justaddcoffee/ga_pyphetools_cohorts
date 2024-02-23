@@ -50,8 +50,8 @@ def vertical_to_horizontal(df):
 def run_dt_algorithm(df_train: pd.DataFrame,
                      df_test: pd.DataFrame,
                      disease: str,
-                     id_col='person_id',
-                     target_col='patient_label',
+                     pt_id_col='person_id',
+                     pt_label_col='patient_label',
                      tune_hyperparameters=False,
                      class_weight="balanced",
                      min_samples_split=2,
@@ -60,12 +60,12 @@ def run_dt_algorithm(df_train: pd.DataFrame,
     print('DT training/testing for ', disease)
 
     # extract labels from the horizontal dataframe
-    y_train = df_train[target_col]
-    y_test = df_test[target_col]
+    y_train = df_train[pt_label_col]
+    y_test = df_test[pt_label_col]
 
     # remove person_id and label columns from the feature set
-    x_train = df_train.drop(columns=[id_col, target_col])
-    x_test = df_test.drop(columns=[id_col, target_col])
+    x_train = df_train.drop(columns=[pt_id_col, pt_label_col])
+    x_test = df_test.drop(columns=[pt_id_col, pt_label_col])
 
     print(sum(y_train), sum(y_test), sum(y_train == 0), sum(y_test == 0))
 
@@ -130,7 +130,7 @@ def run_dt_algorithm(df_train: pd.DataFrame,
     print(
         f'DISOK:\tDT\t{disease}\t{sum(y_train)}\t{sum(y_train == 0)}\t{sum(y_test)}\t{sum(y_test == 0)}\t{round(aucpr_score, ndigits=ndigits)}\t{round(auroc_score, ndigits=ndigits)}\t{round(recall, ndigits=ndigits)}\t{round(precision, ndigits=ndigits)}\t{round(f1, ndigits=ndigits)}')
 
-    return aucpr_score, auroc_score, recall, precision, f1
+    return sum(y_train), sum(y_train==0), sum(y_test), sum(y_test==0), aucpr_score, auroc_score, recall, precision, f1
 
 
 #return auc_score
@@ -177,4 +177,3 @@ def run_dt_algorithm_cv(pt_df,
         print(".")
 
     return aucpr_val / niters
-
