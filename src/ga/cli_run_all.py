@@ -8,7 +8,7 @@ from semsimian import Semsimian
 from ga.utils.cohort import make_cohort, make_kfold_stratified_test_train_splits
 from ga.utils.hpo import make_hpo_closures_and_graph, make_hpo_labels_df
 from ga.utils.phenopacket import parse_phenopackets
-from utils.vertical_to_horizontal import vertical_to_horizontal
+from ga.utils.vertical_to_horizontal import vertical_to_horizontal
 from ga.utils.utils_dt import run_dt_algorithm
 from ga.utils.utils_lr import run_lr_algorithm
 from ga.utils.utils_rf import run_rf_algorithm
@@ -87,8 +87,8 @@ def run_all_command(
         diseases_to_remove_from_negatives: list[str],
         hpo_root_node_to_use: str = "HP:0000001",
         remove_pt_terms_not_in_spo: bool = True,
-        id_col='person_id',
-        target_col='patient_label',
+        pt_id_col='person_id',
+        pt_label_col='patient_label',
         min_num_pts=3,
         max_depth=None,
         n_estimators=100,
@@ -148,6 +148,19 @@ def run_all_command(
         )
         pt_df = pt_df[~pt_df["hpo_term_id"].isin(pt_hpo_terms_not_in_spo)]
 
+    check_df = pt_df[[pt_id_col,pt_label_col]].drop_duplicates()
+    if sum(check_df[pt_label_col]) == 0:
+        warnings.warn(
+            f"I have no positive patients for {disease}: num neg = {str(sum(check_df[pt_label_col]==0))}, num pos = {str(sum(check_df[pt_label_col]))} - interrupting execution"
+        )
+        return
+
+    if sum(check_df[pt_label_col] == 0 ) == 0:
+        warnings.warn(
+            f"I have no negative patients for {disease}: num neg = {str(sum(check_df[pt_label_col]==0))}, num pos = {str(sum(check_df[pt_label_col]))} - interrupting execution"
+        )
+        return
+
     all_rep_perfs_RF = []
     all_rep_perfs_DT = []
     all_rep_perfs_LR = []
@@ -155,7 +168,7 @@ def run_all_command(
 
         # test/train split
         pt_test_train_dict = make_kfold_stratified_test_train_splits(
-            pt_df=pt_df, num_splits=num_splits, seed=42
+            pt_df=pt_df, num_splits=num_splits, seed=42, pt_id_col=pt_id_col, pt_label_col=pt_label_col
         )
 
         # print(sum(df_train['patient_label']), sum(y_test), sum(y_train == 0), sum(y_test == 0))
@@ -177,25 +190,25 @@ def run_all_command(
         for nsplit in range(num_splits):
 
             # check that there are enough train/test pos/neg. Enough means that all the train/test neg/pos sets must contain at least min_num_pts
-            train_labels = pt_test_train_dict[nsplit]["train"][[id_col, target_col]].drop_duplicates()
-            test_labels = pt_test_train_dict[nsplit]["test"][[id_col, target_col]].drop_duplicates()
+            train_labels = pt_test_train_dict[nsplit]["train"][[pt_id_col, pt_label_col]].drop_duplicates()
+            test_labels = pt_test_train_dict[nsplit]["test"][[pt_id_col, pt_label_col]].drop_duplicates()
 
 
-            if (sum(train_labels[target_col]) < min_num_pts):
-                print("too few positive training cases (", sum(train_labels[target_col]), "<", min_num_pts, ')')
+            if (sum(train_labels[pt_label_col]) < min_num_pts):
+                print("too few positive training cases (", sum(train_labels[pt_label_col]), "<", min_num_pts, ')')
                 return
 
-            if (sum(train_labels[target_col] == 0) < min_num_pts):
-                print("too few negative training cases (", sum(train_labels[target_col] == 0), "<", min_num_pts,
+            if (sum(train_labels[pt_label_col] == 0) < min_num_pts):
+                print("too few negative training cases (", sum(train_labels[pt_label_col] == 0), "<", min_num_pts,
                       ')')
                 return
 
-            if (sum(test_labels[target_col]) < min_num_pts):
-                print("too few positive test cases (", sum(test_labels[target_col]), "<", min_num_pts, ')')
+            if (sum(test_labels[pt_label_col]) < min_num_pts):
+                print("too few positive test cases (", sum(test_labels[pt_label_col]), "<", min_num_pts, ')')
                 return
 
-            if (sum(test_labels[target_col] == 0) < min_num_pts):
-                print("too few negative test cases (", sum(test_labels[target_col] == 0), "<", min_num_pts, ')')
+            if (sum(test_labels[pt_label_col] == 0) < min_num_pts):
+                print("too few negative test cases (", sum(test_labels[pt_label_col] == 0), "<", min_num_pts, ')')
                 return
 
             pt_train_df = pt_test_train_dict[nsplit]["train"]
@@ -216,22 +229,22 @@ def run_all_command(
                 columns=['hpo_term_label', 'negated', 'weight', 'hpo_term_id']).drop_duplicates()
             ids_test = pt_test_df.drop(columns=['hpo_term_label', 'negated', 'weight', 'hpo_term_id']).drop_duplicates()
 
-            print(sum(ids_train[target_col]), sum(ids_test[target_col]), sum(ids_train[target_col] == 0),
-                  sum(ids_test[target_col] == 0))
+            print(sum(ids_train[pt_label_col]), sum(ids_test[pt_label_col]), sum(ids_train[pt_label_col] == 0),
+                  sum(ids_test[pt_label_col] == 0))
 
             pt_df_h = vertical_to_horizontal(pd.concat([pt_train_df, pt_test_df]))
-            df_train = pt_df_h.merge(ids_train, on=[id_col, target_col], how='inner')
-            df_test = pt_df_h.merge(ids_test, on=[id_col, target_col], how='inner')
+            df_train = pt_df_h.merge(ids_train, on=[pt_id_col, pt_label_col], how='inner')
+            df_test = pt_df_h.merge(ids_test, on=[pt_id_col, pt_label_col], how='inner')
 
-            print(sum(df_train[target_col]), sum(df_test[target_col]), sum(df_train[target_col] == 0),
-                  sum(df_test[target_col] == 0))
+            print(sum(df_train[pt_label_col]), sum(df_test[pt_label_col]), sum(df_train[pt_label_col] == 0),
+                  sum(df_test[pt_label_col] == 0))
 
             res_scores_RF = run_rf_algorithm(
                 disease=disease,
                 df_train=df_train,
                 df_test=df_test,
-                target_col=target_col,
-                id_col=id_col,
+                pt_label_col=pt_label_col,
+                pt_id_col=pt_id_col,
                 max_depth=max_depth,
                 n_estimators=n_estimators
             )
@@ -241,8 +254,8 @@ def run_all_command(
             res_scores_LR = run_lr_algorithm(
                 df_train=df_train,
                 df_test=df_test,
-                target_col=target_col,
-                id_col=id_col,
+                pt_label_col=pt_label_col,
+                pt_id_col=pt_id_col,
                 disease=disease
             )
             all_split_res_LR.append(res_scores_LR)
@@ -250,8 +263,8 @@ def run_all_command(
             res_scores_DT = run_dt_algorithm(
                 df_train=df_train,
                 df_test=df_test,
-                target_col=target_col,
-                id_col=id_col,
+                pt_label_col=pt_label_col,
+                pt_id_col=pt_id_col,
                 disease=disease,
                 max_depth=max_depth
             )
@@ -264,18 +277,23 @@ def run_all_command(
 
     all_final_res = [tup for tup in zip(*all_rep_perfs_LR)]
     final_res_LR = [round(np.mean(tup), ndigits=ndigits) for tup in all_final_res]
+    str_res = "\t".join([str(i) for i in final_res_LR])
     print(
-        f'DISOKALL:\tLR\t{disease}\t{final_res_LR[0]}\t{final_res_LR[1]}\t{final_res_LR[2]}\t{final_res_LR[3]}\t{final_res_LR[4]}')
+        f'DISOKALL:\tLR\t{disease}\t{str_res}')
+
 
     all_final_res = [tup for tup in zip(*all_rep_perfs_DT)]
     final_res_DT = [round(np.mean(tup), ndigits=ndigits) for tup in all_final_res]
+    str_res = "\t".join([str(i) for i in final_res_DT])
     print(
-        f'DISOKALL:\tDT\t{disease}\t{final_res_DT[0]}\t{final_res_DT[1]}\t{final_res_DT[2]}\t{final_res_DT[3]}\t{final_res_DT[4]}')
+        f'DISOKALL:\tDT\t{disease}\t{str_res}')
+
 
     all_final_res = [tup for tup in zip(*all_rep_perfs_RF)]
     final_res_RF = [round(np.mean(tup), ndigits=ndigits) for tup in all_final_res]
+    str_res = "\t".join([str(i) for i in final_res_RF])
     print(
-        f'DISOKALL:\tRF\t{disease}\t{final_res_RF[0]}\t{final_res_RF[1]}\t{final_res_RF[2]}\t{final_res_RF[3]}\t{final_res_RF[4]}')
+        f'DISOKALL:\tRF\t{disease}\t{str_res}')
 
 
 # do not need the following
