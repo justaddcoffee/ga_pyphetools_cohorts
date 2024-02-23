@@ -4,7 +4,7 @@ from pathlib import Path
 import click
 from semsimian import Semsimian
 
-from ga.utils.cohort import make_cohort, make_kfold_stratified_test_train_splits, \
+from ga.utils.cohort import make_cohort_df, make_kfold_stratified_test_train_splits, \
     make_test_train_split
 from ga.utils.hpo import make_hpo_closures_and_graph, make_hpo_labels_df
 from ga.utils.phenopacket import parse_phenopackets
@@ -33,7 +33,9 @@ from ga.utils.utils import run_genetic_algorithm
     "--diseases-to-remove-from-negatives",
     "-r",
     required=False,
-    help="Diseases to remove from negative phenotypes",
+    help="Diseases to remove from negative phenotypes. These might be diseases that "
+         "are too similar to the disease we're analyzing, or diseases that are too "
+         "dissimilar to the disease we're analyzing. This is a list of strings.",
     type=str,
     multiple=True,
     default=[],
@@ -71,30 +73,16 @@ def run_ga_command(
     hpo_url: str,
     disease: str,
     diseases_to_remove_from_negatives: list[str],
-    hpo_root_node_to_use: str = "HP:0000001",
+    hpo_root_node_to_use: str = "HP:0000118",
     remove_pt_terms_not_in_spo: bool = True,
     debug: bool = False,
 ):
     data = parse_phenopackets(phenopacket_dir)
 
     # make a cohort to analyze
-
-    # make cohort
-    negatives = list(data["phenotype_data"].keys())
-    if disease in negatives:
-        negatives.remove(disease)
-    for r in diseases_to_remove_from_negatives:
-        if r in negatives:
-            negatives.remove(r)
-        else:
-            warnings.warn(
-                f"{r} is not in the negatives list, so I can't remove it from the negatives list"
-            )
-    negatives.sort()
-    pt_df = make_cohort(data["phenotype_data"], disease, negatives)
-    pt_df.rename(columns={"excluded": "negated"}, inplace=True)
-    # all pt phenotypes are weighted equally
-    pt_df["weight"] = 1.0
+    pt_df = make_cohort_df(data,
+                           disease,
+                           diseases_to_remove_from_negatives)
 
     # make "spo" (subject predicate object closures) for semsimian and also nx graph
     # assign spo to first element of tuple, graph to second

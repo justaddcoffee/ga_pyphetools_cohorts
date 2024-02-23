@@ -1,0 +1,141 @@
+{
+  "id": "cystic_fibrosis",
+  "subject": {
+    "id": "OMIM:219700_Cystic fibrosis_7"
+  },
+  "phenotypicFeatures": [
+    {
+      "type": {
+        "id": "HP:0002035",
+        "label": "Rectal prolapse"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0032359",
+        "label": "Decreased forced expiratory flow 25-75%"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0002613",
+        "label": "Biliary cirrhosis"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0012236",
+        "label": "Elevated sweat chloride"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0001508",
+        "label": "Failure to thrive"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0006538",
+        "label": "Recurrent bronchopulmonary infections"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0002570",
+        "label": "Steatorrhea"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0004401",
+        "label": "Meconium ileus"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0011458",
+        "label": "Abdominal symptom"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0000144",
+        "label": "Decreased fertility"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0011109",
+        "label": "Chronic sinusitis"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0001738",
+        "label": "Exocrine pancreatic insufficiency"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0002110",
+        "label": "Bronchiectasis"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0012653",
+        "label": "Status asthmaticus"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0011297",
+        "label": "Abnormal digit morphology"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:0002795",
+        "label": "Abnormal respiratory system physiology"
+      }
+    },
+    {
+      "type": {
+        "id": "HP:6000100",
+        "label": "Hyperpolarized transepithelial nasal potential difference"
+      }
+    }
+  ],
+  "diseases": [
+    {
+      "term": {
+        "id": "OMIM:219700",
+        "label": "Cystic fibrosis"
+      }
+    }
+  ],
+  "metaData": {
+    "created": "2024-02-21T21:17:34.221176Z",
+    "createdBy": "phenotype2phenopacket",
+    "resources": [
+      {
+        "id": "hp",
+        "name": "human phenotype ontology",
+        "url": "http://purl.obolibrary.org/obo/hp.owl",
+        "version": "hp/releases/2024-01-11",
+        "namespacePrefix": "HP",
+        "iriPrefix": "http://purl.obolibrary.org/obo/HP_"
+      },
+      {
+        "id": "omim",
+        "name": "Online Mendelian Inheritance in Man",
+        "url": "https://www.omim.org",
+        "version": "hp/releases/2023-04-18",
+        "namespacePrefix": "OMIM",
+        "iriPrefix": "https://omim.org/entry/"
+      }
+    ],
+    "phenopacketSchemaVersion": "2.0"
+  }
+}

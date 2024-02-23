@@ -5,10 +5,10 @@ import pandas as pd
 import click
 
 from semsimian import Semsimian
-from ga.utils.cohort import make_cohort, make_kfold_stratified_test_train_splits
+from ga.utils.cohort import make_cohort_df, make_kfold_stratified_test_train_splits
 from ga.utils.hpo import make_hpo_closures_and_graph, make_hpo_labels_df
 from ga.utils.phenopacket import parse_phenopackets
-from utils.vertical_to_horizontal import vertical_to_horizontal
+from ga.utils.vertical_to_horizontal import vertical_to_horizontal
 from ga.utils.utils_dt import run_dt_algorithm
 from ga.utils.utils_lr import run_lr_algorithm
 from ga.utils.utils_rf import run_rf_algorithm
@@ -113,7 +113,7 @@ def run_all_command(
                 f"{r} is not in the negatives list, so I can't remove it from the negatives list"
             )
     negatives.sort()
-    pt_df = make_cohort(data["phenotype_data"], disease, negatives)
+    pt_df = make_cohort_df(data["phenotype_data"], disease, negatives)
     pt_df.rename(columns={"excluded": "negated"}, inplace=True)
     # all pt phenotypes are weighted equally
     pt_df["weight"] = 1.0
