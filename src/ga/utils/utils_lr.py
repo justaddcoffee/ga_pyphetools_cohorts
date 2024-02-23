@@ -125,4 +125,3 @@ def run_lr_algorithm(df_train: pd.DataFrame,
     print(
         f'DISOK:\tRF\t{disease}\t{sum(y_train)}\t{sum(y_train == 0)}\t{sum(y_test)}\t{sum(y_test == 0)}\t{round(aucpr_score, ndigits=ndigits)}\t{round(auroc_score, ndigits=ndigits)}\t{round(recall, ndigits=ndigits)}\t{round(precision, ndigits=ndigits)}\t{round(f1, ndigits=ndigits)}')
     return sum(y_train), sum(y_train == 0), sum(y_test), sum(y_test == 0), aucpr_score, auroc_score, recall, precision, f1
-

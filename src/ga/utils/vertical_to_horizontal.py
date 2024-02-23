@@ -8,3 +8,4 @@ def vertical_to_horizontal(df):
     print(df_pivoted.columns)
 
     return df_pivoted
+
