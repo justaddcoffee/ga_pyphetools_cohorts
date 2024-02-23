@@ -26,16 +26,12 @@ def make_kfold_stratified_test_train_splits(
         skf.split(pt_id_df, pt_id_df[pt_label_col])
     ):
         # make a pandas df with train, another with test
-        train = (
-            pt_id_df.drop('patient_label', axis=1).iloc[train_index].merge(pt_df,
-                                                                           on=pt_id_col,
-                                                                           how="left"))
-        test = (
-            pt_id_df.drop('patient_label', axis=1).iloc[test_index].merge(pt_df,
-                                                                          on=pt_id_col,
-                                                                          how="left"))
-        train_test_kfolds.append({'train': train, 'test': test})
-
+        train_test_kfolds.append(
+            {
+                "train": pt_id_df.iloc[train_index].merge(pt_df, on=[pt_id_col, pt_label_col], how='inner'),
+                "test": pt_id_df.iloc[test_index].merge(pt_df, on=[pt_id_col, pt_label_col], how='inner')
+            }
+        )
     return train_test_kfolds
 
 

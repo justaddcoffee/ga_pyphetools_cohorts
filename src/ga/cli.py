@@ -5,9 +5,7 @@ from ga.cli_make_synthetic_data import make_synthetic_data_command
 from ga.cli_make_phenopacket_store_data import make_phenopacket_store_data_command
 from ga.cli_run import run_ga_command
 from ga.cli_run_all import run_all_command
-from ga.cli_run_rf import run_rf_command
-from ga.cli_run_lr import run_lr_command
-from ga.cli_run_dt import run_dt_command
+
 
 
 @click.group()
@@ -17,9 +15,6 @@ def main():
 
 main.add_command(run_ga_command)
 main.add_command(run_all_command)
-#main.add_command(run_rf_command)
-#main.add_command(run_lr_command)
-#main.add_command(run_dt_command)
 main.add_command(optimize_hyperparameters_command)
 main.add_command(make_synthetic_data_command)
 main.add_command(make_phenopacket_store_data_command)
