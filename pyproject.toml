@@ -16,7 +16,6 @@ tqdm = "^4.66.1"
 maturin = "*"
 click = "^8.1.3"
 phenotype2phenopacket = { git = "https://github.com/yaseminbridges/phenotype2phenopacket.git", branch = "main" }
-pyspark = "^3.5.0"
 bayesian-optimization = "^1.4.3"
 
 [tool.pytest.ini_options]

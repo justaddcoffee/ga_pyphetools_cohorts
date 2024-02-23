@@ -39,5 +39,5 @@ ga run -p data/synthetic_phenopackets -d "Marfan syndrome"
 #### Get a real cohort from phenopacket store and run the genetic algorithm on it
 ```shell
 ga make-phenopacket-store-data -o data/phenopacket_store_data
-ga run -p  data/phenopacket_store/notebooks/ -d "Marfan syndrome"
+ga run -p  data/phenopacket_store_data/notebooks/ -d "Marfan syndrome"
 ```

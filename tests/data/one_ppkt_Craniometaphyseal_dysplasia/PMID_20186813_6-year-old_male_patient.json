@@ -12,7 +12,8 @@
     {
       "type": {
         "id": "HP:0003196",
-        "label": "Short nose"
+        "label": "Short nose",
+        "excluded": true
       }
     },
     {
