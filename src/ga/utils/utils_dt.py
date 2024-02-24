@@ -3,12 +3,12 @@ import numpy as np
 #from pyspark.sql.functions import *
 from sklearn.tree import DecisionTreeClassifier, plot_tree
 from sklearn.model_selection import GridSearchCV
-from sklearn.model_selection import cross_val_score
+#from sklearn.model_selection import cross_val_score
 from sklearn.metrics import (precision_recall_curve, auc, make_scorer, roc_curve,
                              recall_score, precision_score, f1_score)
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
-from bayes_opt import BayesianOptimization
+#from bayes_opt import BayesianOptimization
 
 
 # For a callable to be a scorer, it needs to meet the protocol specified by the following two rules: It can be called

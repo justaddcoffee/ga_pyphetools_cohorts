@@ -3,7 +3,7 @@ import numpy as np
 #from pyspark.sql.functions import *
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import GridSearchCV
-from sklearn.model_selection import cross_val_score
+#from sklearn.model_selection import cross_val_score
 from sklearn.metrics import (precision_recall_curve, auc, make_scorer, roc_curve,
                              recall_score, precision_score, f1_score)
 #import matplotlib.pyplot as plt
