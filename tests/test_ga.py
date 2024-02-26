@@ -1,7 +1,5 @@
 from unittest import TestCase
-
 from ga.utils.cohort import make_kfold_stratified_test_train_splits
-from ga.utils.phenopacket import parse_phenopackets
 
 
 class TestGA(TestCase):
