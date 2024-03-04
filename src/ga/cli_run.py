@@ -30,7 +30,7 @@ from ga.utils.utils import run_genetic_algorithm
 @click.option("--disease", "-d", required=True, help="Disease to analyze", type=str)
 @click.option(
     "--diseases-to-remove-from-negatives",
-    "-r",
+    "-n",
     required=False,
     help="Diseases to remove from negative phenotypes. These might be diseases that "
          "are too similar to the disease we're analyzing, or diseases that are too "
@@ -42,7 +42,7 @@ from ga.utils.utils import run_genetic_algorithm
 )
 @click.option(
     "--hpo-root-node-to-use",
-    "-r",
+    "-o",
     required=False,
     help="HPO root node to use",
     type=str,
@@ -51,7 +51,7 @@ from ga.utils.utils import run_genetic_algorithm
 )
 @click.option(
     "--remove-pt-terms-not-in-spo",
-    "-r",
+    "-s",
     required=False,
     help="Remove patient HPO terms that are not in the closures we're using",
     type=bool,
@@ -61,10 +61,9 @@ from ga.utils.utils import run_genetic_algorithm
 @click.option(
     "--debug",
     "-b",
-    required=False,
-    help="Debug mode",
-    type=bool,
+    is_flag=True,
     default=False,
+    help="Enable debug mode",
     show_default=True,
 )
 def run_ga_command(
@@ -72,9 +71,9 @@ def run_ga_command(
     hpo_url: str,
     disease: str,
     diseases_to_remove_from_negatives: list[str],
-    hpo_root_node_to_use: str = "HP:0000118",
-    remove_pt_terms_not_in_spo: bool = True,
-    debug: bool = False,
+    hpo_root_node_to_use: str,
+    remove_pt_terms_not_in_spo: bool,
+    debug: bool,
 ):
     data = parse_phenopackets(phenopacket_dir)
 
