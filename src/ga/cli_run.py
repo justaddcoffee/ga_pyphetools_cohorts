@@ -61,10 +61,9 @@ from ga.utils.utils import run_genetic_algorithm
 @click.option(
     "--debug",
     "-b",
-    required=False,
-    help="Debug mode",
-    type=bool,
+    is_flag=True,
     default=False,
+    help="Enable debug mode",
     show_default=True,
 )
 def run_ga_command(
