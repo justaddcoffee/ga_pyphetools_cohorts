@@ -2390,9 +2390,9 @@ polars = "^0.17.5"
 
 [package.source]
 type = "git"
-url = "https://github.com/yaseminbridges/phenotype2phenopacket.git"
-reference = "main"
-resolved_reference = "2a73048fc15e921a7d11af028bac125446c7ecc0"
+url = "https://github.com/justaddcoffee/phenotype2phenopacket.git"
+reference = "pass_pt_id_to_create_synthetic_patient_phenopacket"
+resolved_reference = "a00821a26068bad7026f211626cb62288694c31f"
 
 [[package]]
 name = "pheval"
@@ -4440,4 +4440,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "ebc79aee174ba527f6ea48ca8ade1fff80f34e8928047bf9e06567e1f7e1c2f2"
+content-hash = "236bd555f2c30738f826d803eb48e7cf23dbcc3b930f43f77344d73fa3560281"
