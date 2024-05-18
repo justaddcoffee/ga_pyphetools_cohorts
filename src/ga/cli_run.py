@@ -46,7 +46,7 @@ from ga.utils.utils import run_genetic_algorithm
     required=False,
     help="HPO root node to use",
     type=str,
-    default="HP:0000001",
+    default="HP:0000118",
     show_default=True,
 )
 @click.option(
