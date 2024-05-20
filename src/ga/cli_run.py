@@ -56,6 +56,7 @@ from ga.utils.utils import run_genetic_algorithm
     help="Remove patient HPO terms that are not in the closures we're using",
     type=bool,
     default=True,
+    is_flag=True,
     show_default=True,
 )
 @click.option(

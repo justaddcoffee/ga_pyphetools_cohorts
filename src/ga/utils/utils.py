@@ -32,18 +32,6 @@ def run_genetic_algorithm(
     hyper_move_term_on_hierarchy_p=0.2,
     debug=False,
 ):
-    # overall strategy:
-    # 1. initialize profiles
-    # 2. for each iteration:
-    #    a. run termset similarity for each profile vs train split
-    #    b. calculate AUC for each profile
-    #    c. select top N profiles
-    #    d. recombine profiles
-    #    e. add/remove terms from profiles
-    #    f. change weights for profiles
-    #    g. move terms on hierarchy to parent or child
-    # 3. run termset similarity for each profile vs test split
-
     if hyper_initialize_and_add_terms_only_from_observed_terms:
         all_hpo_terms = list(pt_train_df["hpo_term_id"].unique())
     else:
@@ -59,7 +47,8 @@ def run_genetic_algorithm(
         hpo_terms_per_profile=hyper_n_initial_hpo_terms_per_profile,
     )
 
-    fitness_by_iteration = []
+    # Initialize a DataFrame to store AUPRCs for each profile at each iteration
+    auprc_by_iteration = pd.DataFrame(columns=["iteration", "profile_id", "auprc", "type"])
 
     progress_bar = tqdm(total=hyper_n_iterations, desc="Running genetic algorithm")
 
@@ -88,10 +77,12 @@ def run_genetic_algorithm(
             ].drop_duplicates(),
         )
 
-        # add results to fitness_by_iteration
-        new_row = train_auc_results.copy()
-        new_row["iteration"] = i
-        fitness_by_iteration += [new_row]
+        # Track the AUPRC for each profile at this iteration
+        for profile_id in train_auc_results["profile_id"].unique():
+            profile_auprc = train_auc_results[train_auc_results["profile_id"] == profile_id]["auprc"].values[0]
+            auprc_by_iteration = auprc_by_iteration.append(
+                {"iteration": i, "profile_id": profile_id, "auprc": profile_auprc, "type": "train"}, ignore_index=True
+            )
 
         top_n_profiles = train_auc_results.sort_values(
             by=hyper_fitness_auc, ascending=False
@@ -144,9 +135,6 @@ def run_genetic_algorithm(
             profiles=profiles_pd,
             move_term_p=hyper_move_term_on_hierarchy_p,
             hpo_graph=hpo_graph,
-            # to make sure we don't move terms to
-            # terms that aren't an s in the spo
-            # to keep semsimian happy
             include_list=[t[0] for t in semsimian.get_spo()],
             debug=debug,
         )
@@ -167,21 +155,15 @@ def run_genetic_algorithm(
         patient_labels=pt_test_df[["person_id", "patient_label"]].drop_duplicates(),
     )
 
-    # add results to fitness_by_iteration
-    new_row = test_auc_results.copy()
-    new_row["iteration"] = -999
-    fitness_by_iteration += [new_row]
+    # Track the final test AUPRC for each profile
+    for profile_id in test_auc_results["profile_id"].unique():
+        profile_auprc = test_auc_results[test_auc_results["profile_id"] == profile_id]["auprc"].values[0]
+        auprc_by_iteration = auprc_by_iteration.append(
+            {"iteration": hyper_n_iterations, "profile_id": profile_id, "auprc": profile_auprc, "type": "test"}, ignore_index=True
+        )
 
-    # output average AUC in fitness_by_iteration by iteration
-    average_auc_by_iteration = pd.DataFrame(
-        columns=["iteration", "mean_auroc", "mean_auprc"]
-    )
-    for i in range(len(fitness_by_iteration)):
-        average_auc_by_iteration.loc[i] = [
-            i,
-            fitness_by_iteration[i]["auroc"].mean(),
-            fitness_by_iteration[i]["auprc"].mean(),
-        ]
+    # Save the AUPRCs for each profile at each iteration and final test AUPRC to a file
+    auprc_by_iteration.to_csv(f"auprc_by_iteration_{disease}_{hyper_n_iterations}.tsv", sep='\t', index=False)
 
     # output profiles_pd to a file
     if node_labels is not None:
@@ -199,5 +181,5 @@ def run_genetic_algorithm(
     )
 
     # make outfile with all hyperparameters in its name
-    outfile = "ga_results_{}_{}_iterations".format(disease, hyper_n_iterations)
+    outfile = f"ga_results_{disease}_{hyper_n_iterations}_iterations"
     profiles_pd.to_csv(outfile + ".tsv", index=False, sep="\t")
