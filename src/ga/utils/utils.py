@@ -157,12 +157,23 @@ def run_genetic_algorithm(
         patient_labels=pt_test_df[["person_id", "patient_label"]].drop_duplicates(),
     )
 
+    # # Track the final test AUPRC for each profile
+    # for profile_id in test_auc_results["profile_id"].unique():
+    #     profile_auprc = test_auc_results[test_auc_results["profile_id"] == profile_id]["auprc"].values[0]
+    #     auprc_by_iteration = auprc_by_iteration.append(
+    #         {"iteration": hyper_n_iterations, "profile_id": profile_id, "auprc": profile_auprc, "type": "test"}, ignore_index=True
+    #     )
+    #
+
     # Track the final test AUPRC for each profile
     for profile_id in test_auc_results["profile_id"].unique():
-        profile_auprc = test_auc_results[test_auc_results["profile_id"] == profile_id]["auprc"].values[0]
-        auprc_by_iteration = auprc_by_iteration.append(
-            {"iteration": hyper_n_iterations, "profile_id": profile_id, "auprc": profile_auprc, "type": "test"}, ignore_index=True
-        )
+        profile_auprc = \
+        test_auc_results[test_auc_results["profile_id"] == profile_id]["auprc"].values[
+            0]
+        new_row = pd.DataFrame([{"iteration": hyper_n_iterations,
+                                 "profile_id": profile_id, "auprc": profile_auprc,
+                                 "type": "test"}])
+        auprc_by_iteration = pd.concat([auprc_by_iteration, new_row], ignore_index=True)
 
     # Save the AUPRCs for each profile at each iteration and final test AUPRC to a file
     auprc_by_iteration.to_csv(f"auprc_by_iteration_{disease}_{hyper_n_iterations}.tsv", sep='\t', index=False)
