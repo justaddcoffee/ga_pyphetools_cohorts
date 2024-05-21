@@ -46,17 +46,15 @@ from ga.utils.utils import run_genetic_algorithm
     required=False,
     help="HPO root node to use",
     type=str,
-    default="HP:0000118",
+    default="HP:0000001",
     show_default=True,
 )
 @click.option(
-    "--remove-pt-terms-not-in-spo",
-    "-s",
+    "--remove-pt-terms-not-in-spo/--no-remove-pt-terms-not-in-spo",
+    "-s/--no-s",
     required=False,
     help="Remove patient HPO terms that are not in the closures we're using",
-    type=bool,
     default=True,
-    is_flag=True,
     show_default=True,
 )
 @click.option(

@@ -79,10 +79,12 @@ def run_genetic_algorithm(
 
         # Track the AUPRC for each profile at this iteration
         for profile_id in train_auc_results["profile_id"].unique():
-            profile_auprc = train_auc_results[train_auc_results["profile_id"] == profile_id]["auprc"].values[0]
-            auprc_by_iteration = auprc_by_iteration.append(
-                {"iteration": i, "profile_id": profile_id, "auprc": profile_auprc, "type": "train"}, ignore_index=True
-            )
+            profile_auprc = \
+            train_auc_results[train_auc_results["profile_id"] == profile_id]["auprc"].values[0]
+            new_row = pd.DataFrame([{"iteration": i, "profile_id": profile_id,
+                                     "auprc": profile_auprc, "type": "train"}])
+            auprc_by_iteration = pd.concat([auprc_by_iteration, new_row],
+                                           ignore_index=True)
 
         top_n_profiles = train_auc_results.sort_values(
             by=hyper_fitness_auc, ascending=False
