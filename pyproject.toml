@@ -17,6 +17,9 @@ maturin = "*"
 click = "^8.1.3"
 phenotype2phenopacket = { git = "https://github.com/justaddcoffee/phenotype2phenopacket.git", branch = "fix_polars_issue" }
 
+[tool.poetry.group.dev.dependencies]
+jupyter = "^1.0.0"
+
 [tool.pytest.ini_options]
 pythonpath = [
     "src"
